@@ -1,0 +1,10 @@
+{
+  "name": "sportalive",
+  "version": "1.0.0",
+  "description": "SportaLive — World Cup 2026 free live streaming, multilingual SEO static site",
+  "scripts": {
+    "build": "node generate.js",
+    "serve": "node generate.js && npx serve ."
+  },
+  "license": "MIT"
+}
