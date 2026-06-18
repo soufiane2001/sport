@@ -14,14 +14,14 @@
     function maybeOpen() {
       var now = Date.now();
       if (now - last() < GAP) return;
-      setLast(now);
       try {
         var w = window.open(AD_URL, "_blank");
-        if (w) { w.blur(); window.focus(); }
+        if (w) { w.blur(); window.focus(); setLast(now); } // only count it if it actually opened
       } catch (e) {}
     }
     document.addEventListener("click", maybeOpen, true);
     document.addEventListener("touchstart", maybeOpen, true);
+    document.addEventListener("keydown", maybeOpen, true);
   })();
 
   /* ---------------- Multi-source live player (DASH + HLS) ---------------- */
