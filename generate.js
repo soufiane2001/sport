@@ -220,7 +220,7 @@ function scripts(lang, sources) {
     return { name: s.name, type: s.type, url: s.url };
   });
   return `
-<script>window.SPORTALIVE_SOURCES=${JSON.stringify(src)};window.SPORTALIVE_AD=${JSON.stringify(cfg.adPopunder)};window.SPORTALIVE_AD_GAP=${JSON.stringify(cfg.adPopunderGapMs || 60000)};window.SPORTALIVE_INT_GAP=${JSON.stringify(cfg.adInterstitialGapMs || 120000)};</script>
+<script>window.SPORTALIVE_SOURCES=${JSON.stringify(src)};window.SPORTALIVE_AD=${JSON.stringify(cfg.adPopunder)};window.SPORTALIVE_AD_GAP=${JSON.stringify(cfg.adPopunderGapMs || 60000)};window.SPORTALIVE_INT_GAP=${JSON.stringify(cfg.adInterstitialGapMs || 120000)};window.SPORTALIVE_INT_DUR=${JSON.stringify(cfg.adInterstitialDurationMs || 6000)};</script>
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <script src="/assets/js/app.js?v=${VERSION}"></script>

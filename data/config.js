@@ -11,6 +11,8 @@ module.exports = {
   adPopunderGapMs: 60000,
   // Auto full-screen interstitial ad interval in ms (in-page overlay, never blocked)
   adInterstitialGapMs: 120000,
+  // How long the interstitial stays before auto-closing (so the match stays watchable)
+  adInterstitialDurationMs: 6000,
   // Native/banner ad (effectivecpmnetwork invoke.js)
   adNativeSrc: "https://pl29569991.effectivecpmnetwork.com/8c2948cd379e7f712c043acbbd7ad4dd/invoke.js",
   adNativeId: "container-8c2948cd379e7f712c043acbbd7ad4dd",

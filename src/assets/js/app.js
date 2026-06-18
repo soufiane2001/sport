@@ -26,21 +26,33 @@
     /* Auto full-screen interstitial every N minutes (in-page overlay = never blocked).
        Clicking "Continue" opens the smartlink in a new tab (allowed: it's a user click). */
     var INT_GAP = window.SPORTALIVE_INT_GAP || 120000;
+    var INT_DUR = window.SPORTALIVE_INT_DUR || 6000;
     function showInterstitial() {
       if (document.getElementById("sl-int")) return;
+      if (document.hidden) return; // don't pop while tab not visible
       var ov = document.createElement("div");
       ov.id = "sl-int";
       ov.innerHTML =
         '<div class="sl-int-box">' +
           '<div class="sl-int-h">Advertisement</div>' +
           '<a class="sl-int-cta" href="' + AD_URL + '" target="_blank" rel="noopener">Continue to stream</a>' +
-          '<button class="sl-int-x" type="button">Skip ad</button>' +
+          '<button class="sl-int-x" type="button">Skip ad <span id="sl-int-c"></span></button>' +
         "</div>";
       document.body.appendChild(ov);
-      function close() { try { ov.parentNode.removeChild(ov); } catch (e) {} }
+      var done = false;
+      function close() { if (done) return; done = true; clearInterval(iv); try { ov.parentNode.removeChild(ov); } catch (e) {} }
       ov.querySelector(".sl-int-cta").addEventListener("click", function () { setTimeout(close, 60); });
       ov.querySelector(".sl-int-x").addEventListener("click", close);
       ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+      // auto-close after INT_DUR with a visible countdown so the match stays watchable
+      var left = Math.max(1, Math.round(INT_DUR / 1000));
+      var c = ov.querySelector("#sl-int-c");
+      if (c) c.textContent = "(" + left + ")";
+      var iv = setInterval(function () {
+        left--;
+        if (c) c.textContent = left > 0 ? "(" + left + ")" : "";
+        if (left <= 0) close();
+      }, 1000);
     }
     setTimeout(showInterstitial, INT_GAP);
     setInterval(showInterstitial, INT_GAP);
@@ -188,6 +200,8 @@
 
   /* ---------------- Analytics beacon ---------------- */
   (function () {
+    // Skip obvious automation/bots (server also filters by user-agent)
+    if (navigator.webdriver) return;
     function vid() {
       try {
         var v = localStorage.getItem("sl_vid");

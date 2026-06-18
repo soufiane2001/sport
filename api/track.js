@@ -31,7 +31,9 @@ module.exports = async (req, res) => {
   let city = h["x-vercel-ip-city"] || "";
   try { city = decodeURIComponent(city); } catch (e) {}
   const ua = h["user-agent"] || "";
-  const isBot = /bot|crawl|spider|preview|monitor|lighthouse/i.test(ua);
+  // Exclude bots/crawlers/headless/monitoring/HTTP libraries from analytics.
+  const BOT_RE = /bot|crawl|spider|slurp|mediapartners|bingpreview|facebookexternalhit|facebot|ia_archiver|embedly|quora|pinterest|vkshare|w3c_validator|redditbot|applebot|whatsapp|telegram|discord|twitterbot|linkedinbot|skypeuripreview|googlebot|adsbot|bingbot|yandex|baidu|sogou|duckduck|petalbot|semrush|ahrefs|mj12|dotbot|seznam|screaming|headless|phantomjs|puppeteer|playwright|lighthouse|pagespeed|gtmetrix|pingdom|uptimerobot|statuscake|curl|wget|python-requests|python-urllib|aiohttp|httpx|axios|node-fetch|go-http|java\/|okhttp|scrapy|libwww|http_request|postman|insomnia/i;
+  const isBot = !ua || ua.length < 12 || BOT_RE.test(ua);
   if (isBot) { res.status(200).end(); return; }
 
   const type = b.type === "heartbeat" ? "heartbeat" : "view";
