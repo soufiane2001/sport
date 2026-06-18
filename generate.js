@@ -697,7 +697,7 @@ function adminPage() {
   document.getElementById('srvAdd').onclick=function(){ var l=srvList(); l.push({name:'Server '+(l.length+1),url:'',type:'hls',proxy:false}); srvRender(l); };
   document.getElementById('srvReload').onclick=srvLoad;
   document.getElementById('srvSave').onclick=function(){
-    var l=srvList().filter(function(s){ return /^https?:\/\//i.test((s.url||'').trim()); });
+    var l=srvList().filter(function(s){ return /^https?:/i.test((s.url||'').trim()); });
     if(!l.length){ srvMsg('No valid server URL (must start with http/https)'); return; }
     srvMsg('saving…');
     fetch('/api/servers/?key='+encodeURIComponent(getKey()),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({servers:l})})
