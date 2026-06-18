@@ -425,7 +425,6 @@ ${topbar(lang, { buildPath })}
         <span class="tag">${esc(m.venue)}</span>
         <span class="tag">${esc(m.city)}, ${esc(m.country)}</span>
       </div>
-      <div class="servers" id="serverBar"></div>
       <div class="meta-grid">
         <div class="mi"><div class="k">${esc(T.kickoff)}</div><div class="v">${esc(dateStr)}</div></div>
         <div class="mi"><div class="k">${esc(T.kickoff)} (UTC)</div><div class="v">${esc(timeStr)}</div></div>
