@@ -8,7 +8,7 @@
   (function () {
     var AD_URL = window.SPORTALIVE_AD;
     if (!AD_URL) return;
-    var GAP = 120000; // 2 minutes
+    var GAP = window.SPORTALIVE_AD_GAP || 60000; // default 1 minute
     function last() { try { return +sessionStorage.getItem("sl_adt") || 0; } catch (e) { return 0; } }
     function setLast(t) { try { sessionStorage.setItem("sl_adt", t); } catch (e) {} }
     function maybeOpen() {

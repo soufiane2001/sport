@@ -200,6 +200,15 @@ function footer(lang, o) {
 </footer>`;
 }
 
+function adNative() {
+  if (!cfg.adNativeSrc || !cfg.adNativeId) return "";
+  return `
+    <section class="section ad-native">
+      <script async="async" data-cfasync="false" src="${esc(cfg.adNativeSrc)}"></script>
+      <div id="${esc(cfg.adNativeId)}"></div>
+    </section>`;
+}
+
 function scripts(lang, sources) {
   const raw = sources || streams.DEFAULT_SOURCES;
   // Wrap proxied sources so they route through /api/p (bypasses geo-blocks)
@@ -210,7 +219,7 @@ function scripts(lang, sources) {
     return { name: s.name, type: s.type, url: s.url };
   });
   return `
-<script>window.SPORTALIVE_SOURCES=${JSON.stringify(src)};window.SPORTALIVE_AD=${JSON.stringify(cfg.adPopunder)};</script>
+<script>window.SPORTALIVE_SOURCES=${JSON.stringify(src)};window.SPORTALIVE_AD=${JSON.stringify(cfg.adPopunder)};window.SPORTALIVE_AD_GAP=${JSON.stringify(cfg.adPopunderGapMs || 60000)};</script>
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <script src="/assets/js/app.js"></script>
@@ -290,8 +299,9 @@ ${topbar(lang, { buildPath })}
     <section class="hero" id="live">
       <h1>${esc(T.hero_title)}</h1>
       <p>${esc(T.hero_sub)}</p>
-      <a class="btn" href="${matchPath(lang, matches[0].slug)}">▶ ${esc(T.watch_live)}</a>
+      <a class="btn" href="${matchPath(lang, matches[0].slug)}">${esc(T.watch_live)}</a>
     </section>
+    ${adNative()}
     <section class="section" id="matches">
       <h2>${esc(T.full_schedule)} — ${matches.length} ${esc(T.nav_matches)} · ${esc(COMP)}</h2>
       <p style="color:var(--muted);margin:-6px 0 4px">${esc(T.seo_home_desc)}</p>
@@ -441,6 +451,7 @@ ${topbar(lang, { buildPath })}
         ${esc(T.free_stream)} · ${esc(COMP)}.</p>
       </div>
     </section>
+    ${adNative()}
     <section class="section">
       <h2>FAQ — ${esc(matchTitleText(lang, m))}</h2>
       <div class="faq">

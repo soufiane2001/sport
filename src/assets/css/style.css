@@ -122,6 +122,10 @@ img{max-width:100%}
 .chat-foot input{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);
   padding:9px 10px;border-radius:6px;outline:none}
 
+/* ---------- Native ad slot ---------- */
+.ad-native{text-align:center}
+.ad-native > div{margin:0 auto;max-width:100%}
+
 /* ---------- Country flags ---------- */
 .fl{width:24px;height:18px;object-fit:cover;border-radius:2px;vertical-align:middle;
   box-shadow:0 0 0 1px rgba(0,0,0,.18);flex-shrink:0}
