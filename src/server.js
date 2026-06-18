@@ -2,7 +2,7 @@
 const http = require("http");
 const fs = require("fs");
 const p = require("path");
-const ROOT = p.join(__dirname, "..");
+const ROOT = p.join(__dirname, "..", "public");
 const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript",
   ".xml": "application/xml", ".svg": "image/svg+xml", ".json": "application/json",
   ".png": "image/png", ".jpg": "image/jpeg", ".ico": "image/x-icon" };

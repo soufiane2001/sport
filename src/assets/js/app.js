@@ -105,6 +105,87 @@
     setInterval(addMsg, 2200);
   }
 
+  /* ---------------- Analytics beacon ---------------- */
+  (function () {
+    function vid() {
+      try {
+        var v = localStorage.getItem("sl_vid");
+        if (!v) { v = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("sl_vid", v); }
+        return v;
+      } catch (e) { return "anon"; }
+    }
+    function send(type) {
+      var payload = JSON.stringify({
+        type: type, path: location.pathname, ref: document.referrer,
+        lang: document.documentElement.lang || "", vid: vid(),
+      });
+      try {
+        if (navigator.sendBeacon) { navigator.sendBeacon("/api/track", payload); return; }
+      } catch (e) {}
+      try { fetch("/api/track", { method: "POST", body: payload, keepalive: true }); } catch (e) {}
+    }
+    send("view");
+    // Heartbeat = watch time. Only while tab is visible.
+    setInterval(function () { if (!document.hidden) send("heartbeat"); }, 15000);
+  })();
+
+  /* ---------------- Match search (104 matches) ---------------- */
+  (function () {
+    var input = document.getElementById("searchInput");
+    var box = document.getElementById("searchResults");
+    if (!input || !box) return;
+    var lang = document.documentElement.lang || "en";
+    var data = null;
+
+    function matchUrl(slug) {
+      return lang === "en" ? "/match/" + slug + "/" : "/" + lang + "/match/" + slug + "/";
+    }
+    function load(cb) {
+      if (data) return cb();
+      fetch("/assets/search-index.json").then(function (r) { return r.json(); })
+        .then(function (j) { data = j; cb(); })
+        .catch(function () { data = []; cb(); });
+    }
+    function norm(s) { return (s || "").toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+
+    function run() {
+      var q = norm(input.value.trim());
+      if (!q) { box.style.display = "none"; box.innerHTML = ""; return; }
+      load(function () {
+        var hits = data.filter(function (m) {
+          return norm(m.a + " " + m.b + " " + m.c + " " + m.g).indexOf(q) !== -1;
+        }).slice(0, 12);
+        if (!hits.length) {
+          box.innerHTML = '<div class="sr-empty">No match found</div>';
+        } else {
+          box.innerHTML = hits.map(function (m) {
+            return '<a class="sr-item" href="' + matchUrl(m.s) + '">' +
+              '<span class="sr-vs">' + esc(m.a) + ' <b>vs</b> ' + esc(m.b) + '</span>' +
+              '<span class="sr-meta">' + esc(m.g) + ' · ' + esc(m.c) + ' · ' + esc(m.d) + '</span></a>';
+          }).join("");
+        }
+        box.style.display = "block";
+      });
+    }
+    function esc(s) { return String(s == null ? "" : s)
+      .replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+
+    var ti;
+    input.addEventListener("input", function () { clearTimeout(ti); ti = setTimeout(run, 120); });
+    input.addEventListener("focus", function () { if (input.value.trim()) run(); });
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest("#searchBox")) box.style.display = "none";
+    });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        var first = box.querySelector(".sr-item");
+        if (first) window.location.href = first.getAttribute("href");
+      }
+      if (e.key === "Escape") { box.style.display = "none"; }
+    });
+  })();
+
   /* ---------------- Language switcher ---------------- */
   var langSel = document.getElementById("langSelect");
   if (langSel) {

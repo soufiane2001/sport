@@ -128,9 +128,10 @@ function topbar(lang, o) {
     <a href="${homePath(lang)}#matches">${esc(T.nav_matches)}</a>
     <a href="${homePath(lang)}#schedule">${esc(T.nav_schedule)}</a>
   </nav>
-  <div class="search">
-    <input type="text" placeholder="${esc(T.nav_matches)}…" aria-label="search" />
-    <button>🔍</button>
+  <div class="search" id="searchBox">
+    <input type="text" id="searchInput" placeholder="${esc(T.nav_matches)}… (104)" aria-label="search" autocomplete="off" />
+    <button aria-label="search">🔍</button>
+    <div class="search-results" id="searchResults"></div>
   </div>
   <div class="topbar-right">
     <select class="lang-select" id="langSelect" aria-label="Language">${opts}</select>
@@ -385,6 +386,166 @@ ${topbar(lang, { buildPath })}
   writeFile(rel, html);
 }
 
+/* ---------------- admin dashboard ---------------- */
+function adminPage() {
+  const html = `<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>SportaLive — Admin Analytics</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml"/>
+<link rel="stylesheet" href="/assets/css/style.css"/>
+<style>
+  .wrap{max-width:1100px;margin:0 auto;padding:24px}
+  .login{max-width:360px;margin:80px auto;background:var(--bg2);border:1px solid var(--line);
+    border-radius:10px;padding:24px;text-align:center}
+  .login h1{font-size:20px;margin:0 0 14px}
+  .login input{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);
+    padding:10px;border-radius:6px;margin-bottom:12px;outline:none}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:18px 0}
+  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .stat .n{font-size:30px;font-weight:800}
+  .stat .l{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+  .stat.live .n{color:#00d27a}
+  .panel{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+  .panel h2{font-size:15px;margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.4px}
+  td.num,th.num{text-align:right}
+  .bars{display:flex;align-items:flex-end;gap:3px;height:120px}
+  .bar{flex:1;background:linear-gradient(180deg,var(--purple),var(--purple2));border-radius:3px 3px 0 0;min-height:2px;position:relative}
+  .bar:hover::after{content:attr(data-t);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+    background:#000;color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;white-space:nowrap}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .toolbar .muted{color:var(--muted);font-size:12px}
+  .err{color:#ff6b6b;font-size:13px;margin-top:8px}
+  .flagc{display:inline-block;width:22px}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><span class="dot">▶</span>Sporta<b>Live</b></a>
+  <div style="margin-left:auto;font-weight:700;color:var(--muted)">Admin · Analytics</div>
+</header>
+
+<div class="wrap">
+  <div id="login" class="login">
+    <h1>🔒 Admin Access</h1>
+    <input id="key" type="password" placeholder="Admin key" autocomplete="current-password"/>
+    <button class="btn" id="loginBtn" style="width:100%">Sign in</button>
+    <div class="err" id="loginErr"></div>
+    <div class="muted" style="color:var(--muted);font-size:12px;margin-top:12px">
+      Set <code>ADMIN_KEY</code> &amp; <code>DATABASE_URL</code> in Vercel env vars.
+    </div>
+  </div>
+
+  <div id="dash" style="display:none">
+    <div class="toolbar">
+      <button class="btn" id="refreshBtn">↻ Refresh</button>
+      <span class="muted" id="updated"></span>
+      <span style="margin-left:auto"><a href="#" id="logout" class="muted">Logout</a></span>
+    </div>
+    <div class="cards" id="cards"></div>
+
+    <div class="panel">
+      <h2>Traffic — last 24 hours (page views per hour)</h2>
+      <div class="bars" id="bars"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <h2>🌍 Top countries</h2>
+        <table id="countries"><thead><tr><th>Country</th><th class="num">Visitors</th><th class="num">Views</th><th class="num">Watch (min)</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel">
+        <h2>📄 Top pages</h2>
+        <table id="pages"><thead><tr><th>Path</th><th class="num">Views</th><th class="num">Watch (min)</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h2>🗣 Languages</h2>
+        <table id="langs"><thead><tr><th>Lang</th><th class="num">Views</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel">
+        <h2>🔗 Referrers</h2>
+        <table id="refs"><thead><tr><th>Source</th><th class="num">Views</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+    <div class="err" id="dashErr"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var login=document.getElementById('login'), dash=document.getElementById('dash');
+  var keyInput=document.getElementById('key');
+  function flag(cc){ if(!cc||cc.length!==2||cc==='??') return '🏳️';
+    return String.fromCodePoint.apply(null,[...cc.toUpperCase()].map(c=>0x1F1E6+c.charCodeAt(0)-65)); }
+  function getKey(){ try{return sessionStorage.getItem('sl_admin')||'';}catch(e){return '';} }
+  function setKey(k){ try{sessionStorage.setItem('sl_admin',k);}catch(e){} }
+
+  async function load(){
+    var k=getKey(); if(!k) return show(false);
+    try{
+      var r=await fetch('/api/stats?key='+encodeURIComponent(k));
+      if(r.status===401){ document.getElementById('loginErr').textContent='Wrong key.'; return show(false); }
+      var d=await r.json();
+      if(d.error){ document.getElementById('dashErr').textContent=d.error; }
+      render(d); show(true);
+    }catch(e){ document.getElementById('dashErr').textContent='Load failed: '+e; show(true); }
+  }
+  function show(ok){ login.style.display=ok?'none':'block'; dash.style.display=ok?'block':'none'; }
+
+  function card(n,l,cls){ return '<div class="stat '+(cls||'')+'"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
+  function render(d){
+    if(!d.totals) return;
+    var t=d.totals;
+    document.getElementById('cards').innerHTML =
+      card(t.activeNow,'Active now','live')+card(t.visitors.toLocaleString(),'Unique visitors')+
+      card(t.views.toLocaleString(),'Page views')+card(t.views24h.toLocaleString(),'Views (24h)')+
+      card(t.watchHours.toLocaleString()+'h','Watch time');
+    document.getElementById('updated').textContent='Updated '+new Date(d.generatedAt).toLocaleTimeString();
+
+    // bars
+    var tl=d.timeline||[], max=Math.max(1,...tl.map(x=>+x.views));
+    document.getElementById('bars').innerHTML = tl.length? tl.map(function(x){
+      var h=Math.round((+x.views/max)*100); var hr=x.hour.slice(11,16);
+      return '<div class="bar" style="height:'+h+'%" data-t="'+hr+': '+x.views+' views"></div>';
+    }).join('') : '<span class="muted" style="color:var(--muted)">No data yet.</span>';
+
+    fill('countries', d.countries, function(r){
+      return '<td><span class="flagc">'+flag(r.country)+'</span> '+r.country+'</td><td class="num">'+r.visitors+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
+    fill('pages', d.pages, function(r){
+      return '<td>'+esc(r.path)+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
+    fill('langs', d.langs, function(r){ return '<td>'+r.lang+'</td><td class="num">'+r.views+'</td>'; });
+    fill('refs', d.referrers, function(r){ return '<td>'+esc(r.ref).slice(0,60)+'</td><td class="num">'+r.views+'</td>'; });
+  }
+  function fill(id,rows,fn){
+    var tb=document.querySelector('#'+id+' tbody');
+    tb.innerHTML=(rows&&rows.length)? rows.map(function(r){return '<tr>'+fn(r)+'</tr>';}).join('') :
+      '<tr><td colspan="4" class="muted" style="color:var(--muted)">No data yet.</td></tr>';
+  }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+
+  document.getElementById('loginBtn').onclick=function(){ setKey(keyInput.value.trim()); load(); };
+  keyInput.addEventListener('keydown',function(e){ if(e.key==='Enter'){ setKey(keyInput.value.trim()); load(); } });
+  document.getElementById('refreshBtn').onclick=load;
+  document.getElementById('logout').onclick=function(e){ e.preventDefault(); try{sessionStorage.removeItem('sl_admin');}catch(x){} show(false); };
+  load();
+  setInterval(function(){ if(getKey()&&dash.style.display!=='none') load(); }, 30000);
+})();
+</script>
+</body>
+</html>`;
+  writeFile("admin/index.html", html);
+}
+
 /* ---------------- sitemaps & robots ---------------- */
 function buildSitemaps() {
   const sm = [];
@@ -408,8 +569,18 @@ function buildSitemaps() {
     `\n</sitemapindex>\n`;
   writeFile("sitemap.xml", idx);
 
-  const robots = `User-agent: *\nAllow: /\n\nSitemap: ${abs("/sitemap.xml")}\n`;
+  const robots = `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: ${abs("/sitemap.xml")}\n`;
   writeFile("robots.txt", robots);
+}
+
+/* ---------------- search index ---------------- */
+function buildSearchIndex() {
+  const idx = matches.map((m) => ({
+    a: m.teamA, b: m.teamB, s: m.slug,
+    g: m.group || m.stage, st: m.stage,
+    c: m.city, d: m.date,
+  }));
+  writeFile("assets/search-index.json", JSON.stringify(idx));
 }
 
 /* ---------------- assets ---------------- */
@@ -442,6 +613,8 @@ function run() {
     homePage(lang); pages++;
     for (const m of matches) { matchPage(lang, m); pages++; }
   }
+  buildSearchIndex();
+  adminPage();
   buildSitemaps();
   console.log(`✅ Generated ${pages} pages across ${LANGS.length} languages.`);
   console.log(`   Matches: ${matches.length}  |  Sitemaps: ${LANGS.length + 1}`);
