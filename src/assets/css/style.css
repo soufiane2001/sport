@@ -122,6 +122,21 @@ img{max-width:100%}
 .chat-foot input{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);
   padding:9px 10px;border-radius:6px;outline:none}
 
+/* ---------- Country flags ---------- */
+.fl{width:24px;height:18px;object-fit:cover;border-radius:2px;vertical-align:middle;
+  box-shadow:0 0 0 1px rgba(0,0,0,.18);flex-shrink:0}
+.fl.big-fl{width:34px;height:25px}
+.tm{display:flex;align-items:center;gap:8px;justify-content:center;min-width:0}
+.tm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vsx{font-weight:600;opacity:.75;font-size:12px}
+.card .thumb .match{display:flex;flex-direction:column;align-items:center;gap:6px;
+  width:100%;font-weight:800;font-size:14px;line-height:1.25}
+.teams-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.teams-head .tm{gap:10px;font-size:18px}
+.teams-head .vsx{font-size:13px}
+.player-overlay .big{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.flag .fl{width:30px;height:30px;border-radius:50%;box-shadow:none}
+
 /* ---------- Hero (home) ---------- */
 .hero{padding:30px 18px;background:linear-gradient(120deg,#f3ecff,#ffffff);
   border-bottom:1px solid var(--line)}

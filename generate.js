@@ -12,6 +12,7 @@ const { LANGS, RTL, t } = require("./data/i18n");
 const { build } = require("./data/matches");
 const streams = require("./data/streams");
 const faqData = require("./data/faq");
+const FLAGS = require("./data/flags");
 
 const ROOT = __dirname;
 const OUT = path.join(ROOT, "public"); // Vercel output directory
@@ -29,6 +30,12 @@ const LOCALE = {
 /* ---------------- helpers ---------------- */
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
   .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+function flag(name, cls) {
+  const code = FLAGS[name];
+  if (!code) return "";
+  return `<img class="fl${cls ? " " + cls : ""}" src="https://flagcdn.com/${code}.svg" width="24" height="18" loading="lazy" alt="${esc(name)} flag" />`;
+}
 
 function homePath(lang) { return lang === cfg.defaultLang ? "/" : `/${lang}/`; }
 function matchPath(lang, slug) {
@@ -111,6 +118,7 @@ function head(lang, o) {
   <meta name="twitter:image" content="${esc(ogImg)}" />
 ${hreflangTags(o.buildPath)}  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://cdn.dashjs.org" />
+  <link rel="preconnect" href="https://flagcdn.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" />
@@ -155,7 +163,7 @@ function sidebar(lang, current) {
     const initials = (m.teamA[0] || "?") + (m.teamB[0] || "?");
     rows += `
     <a class="chan" href="${matchPath(lang, m.slug)}">
-      <span class="flag">${esc(initials)}</span>
+      <span class="flag">${flag(m.teamA) || esc(initials)}</span>
       <span class="meta">
         <div class="n">${esc(matchTitleText(lang, m))}</div>
         <div class="g">${esc(stageLabel(lang, m))}</div>
@@ -210,7 +218,11 @@ function matchCard(lang, m, live) {
     <a class="card" href="${matchPath(lang, m.slug)}">
       <div class="thumb">${liveTag}
         <span class="stagep">#${m.num}</span>
-        <span class="match">${esc(m.teamA)}<br>${esc(T.vs)}<br>${esc(m.teamB)}</span>
+        <span class="match">
+          <span class="tm">${flag(m.teamA)}<span>${esc(m.teamA)}</span></span>
+          <span class="vsx">${esc(T.vs)}</span>
+          <span class="tm">${flag(m.teamB)}<span>${esc(m.teamB)}</span></span>
+        </span>
       </div>
       <div class="body">
         <div class="t">${esc(matchTitleText(lang, m))}</div>
@@ -358,7 +370,11 @@ function matchPage(lang, m) {
     relCards += `
     <a class="card" href="${matchPath(lang, r.slug)}">
       <div class="thumb"><span class="stagep">${esc(stageLabel(lang, r))}</span>
-        <span class="match">${esc(r.teamA)}<br>${esc(T.vs)}<br>${esc(r.teamB)}</span></div>
+        <span class="match">
+          <span class="tm">${flag(r.teamA)}<span>${esc(r.teamA)}</span></span>
+          <span class="vsx">${esc(T.vs)}</span>
+          <span class="tm">${flag(r.teamB)}<span>${esc(r.teamB)}</span></span>
+        </span></div>
       <div class="body"><div class="t">${esc(matchTitleText(lang, r))}</div>
         <div class="d">${esc(fmtDate(r.dateISO, lang))}</div></div>
     </a>`;
@@ -379,12 +395,21 @@ ${topbar(lang, { buildPath })}
       <span class="viewers-badge"><span id="viewerCount">0</span> ${esc(T.viewers)}</span>
       <video id="player" playsinline controls preload="none"></video>
       <div class="player-overlay" id="playerOverlay">
-        <div class="big">${esc(matchTitleText(lang, m))}</div>
+        <div class="big">
+          <span class="tm">${flag(m.teamA, "big-fl")}<span>${esc(m.teamA)}</span></span>
+          <span class="vsx">${esc(T.vs)}</span>
+          <span class="tm">${flag(m.teamB, "big-fl")}<span>${esc(m.teamB)}</span></span>
+        </div>
         <button class="play-btn" id="startBtn">${esc(T.watch_live)}</button>
         <div style="color:#d6c8f5">${esc(T.free_stream)}</div>
       </div>
     </div>
     <div class="info-bar">
+      <div class="teams-head">
+        <span class="tm">${flag(m.teamA, "big-fl")}<b>${esc(m.teamA)}</b></span>
+        <span class="vsx">${esc(T.vs)}</span>
+        <span class="tm">${flag(m.teamB, "big-fl")}<b>${esc(m.teamB)}</b></span>
+      </div>
       <h1>${esc(h1)}</h1>
       <div class="sub">${esc(stage)} · ${esc(COMP)} · <span id="viewerCount2"></span></div>
       <div class="tags">
@@ -572,7 +597,8 @@ function adminPage() {
     }).join('') : '<span class="muted" style="color:var(--muted)">No data yet.</span>';
 
     fill('countries', d.countries, function(r){
-      return '<td>'+r.country+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
+      var fl = (r.country && r.country.length===2) ? '<img class="fl" src="https://flagcdn.com/'+r.country.toLowerCase()+'.svg" width="22" height="16" alt="" loading="lazy"> ' : '';
+      return '<td>'+fl+r.country+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
     fill('pages', d.pages, function(r){
       return '<td>'+esc(r.path)+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
     fill('langs', d.langs, function(r){ return '<td>'+r.lang+'</td><td class="num">'+r.views+'</td>'; });
