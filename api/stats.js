@@ -1,89 +1,85 @@
-// Admin analytics aggregator (Vercel serverless function).
-// Protected by ?key=ADMIN_KEY. Returns JSON consumed by /admin/.
-const { neon } = require("@neondatabase/serverless");
+// Admin analytics aggregator (Vercel serverless function) — Vercel KV.
+// Protected by ?key=ADMIN_KEY (default "060101"). Returns JSON for /admin/.
+const { enabled, pipe, hToObj } = require("./_kv");
 
-const HB_SECONDS = 15; // one heartbeat ~ every 15s of watch time
+const ADMIN = process.env.ADMIN_KEY || "060101";
+const HB_SECONDS = 15;
+
+function sortHash(obj, limit) {
+  return Object.keys(obj)
+    .map((k) => ({ k, v: obj[k] }))
+    .sort((a, b) => b.v - a.v)
+    .slice(0, limit || 25);
+}
 
 module.exports = async (req, res) => {
   const key = (req.query && req.query.key) || "";
-  if (!process.env.ADMIN_KEY) {
-    res.status(500).json({ error: "ADMIN_KEY not configured on the server." });
-    return;
-  }
-  if (key !== process.env.ADMIN_KEY) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
-  }
-  if (!process.env.DATABASE_URL) {
-    res.status(500).json({ error: "DATABASE_URL not configured on the server." });
-    return;
-  }
+  if (key !== ADMIN) { res.status(401).json({ error: "unauthorized" }); return; }
+  res.setHeader("Cache-Control", "no-store");
 
-  const sql = neon(process.env.DATABASE_URL);
+  const empty = {
+    ok: true, storage: false, generatedAt: new Date().toISOString(),
+    totals: { views: 0, visitors: 0, views24h: 0, activeNow: 0, watchHours: 0 },
+    timeline: [], countries: [], pages: [], langs: [], referrers: [],
+  };
+  if (!enabled) { res.status(200).json(empty); return; }
+
   try {
-    await sql`create table if not exists events (
-      id bigserial primary key, ts timestamptz not null default now(),
-      type text, path text, ref text, country text, city text, lang text, ua text, vid text
-    )`;
+    const now = Date.now();
+    const r = await pipe([
+      ["GET", "views:total"],            // 0
+      ["GET", "hb:total"],               // 1
+      ["PFCOUNT", "visitors:all"],       // 2
+      ["HGETALL", "country:views"],      // 3
+      ["HGETALL", "country:watch"],      // 4
+      ["HGETALL", "page:views"],         // 5
+      ["HGETALL", "page:watch"],         // 6
+      ["HGETALL", "lang:views"],         // 7
+      ["HGETALL", "ref:views"],          // 8
+      ["HGETALL", "traffic:hour"],       // 9
+      ["ZCOUNT", "active", now - 300000, now], // 10
+    ]);
 
-    const totals = (await sql`
-      select
-        count(*) filter (where type='view')                         as views,
-        count(distinct vid)                                         as visitors,
-        count(*) filter (where type='heartbeat')                    as hb,
-        count(*) filter (where type='view' and ts > now() - interval '24 hours') as views_24h,
-        count(distinct vid) filter (where ts > now() - interval '5 minutes')     as active_now
-      from events`)[0];
+    const countryViews = hToObj(r[3]), countryWatch = hToObj(r[4]);
+    const pageViews = hToObj(r[5]), pageWatch = hToObj(r[6]);
+    const langViews = hToObj(r[7]), refViews = hToObj(r[8]);
+    const trafficHour = hToObj(r[9]);
 
-    const watchSeconds = Number(totals.hb || 0) * HB_SECONDS;
+    // last 24 hourly buckets (ascending)
+    const timeline = [];
+    let views24h = 0;
+    for (let i = 23; i >= 0; i--) {
+      const d = new Date(now - i * 3600000);
+      const hk = d.toISOString().slice(0, 13);
+      const v = trafficHour[hk] || 0;
+      views24h += v;
+      timeline.push({ hour: hk + ":00", views: v });
+    }
 
-    const timeline = await sql`
-      select to_char(date_trunc('hour', ts), 'YYYY-MM-DD"T"HH24:00') as hour,
-             count(*) filter (where type='view') as views,
-             count(distinct vid) as visitors
-      from events
-      where ts > now() - interval '24 hours'
-      group by 1 order by 1`;
+    const countries = sortHash(countryViews).map((x) => ({
+      country: x.k, views: x.v,
+      watch_min: Math.round((countryWatch[x.k] || 0) * HB_SECONDS / 60),
+    }));
+    const pages = sortHash(pageViews).map((x) => ({
+      path: x.k, views: x.v,
+      watch_min: Math.round((pageWatch[x.k] || 0) * HB_SECONDS / 60),
+    }));
+    const langs = sortHash(langViews, 20).map((x) => ({ lang: x.k, views: x.v }));
+    const referrers = sortHash(refViews, 15).map((x) => ({ ref: x.k, views: x.v }));
 
-    const countries = await sql`
-      select coalesce(country,'??') as country,
-             count(*) filter (where type='view') as views,
-             count(distinct vid) as visitors,
-             round((count(*) filter (where type='heartbeat')) * ${HB_SECONDS} / 60.0) as watch_min
-      from events
-      group by 1 order by views desc limit 25`;
-
-    const pages = await sql`
-      select coalesce(path,'/') as path,
-             count(*) filter (where type='view') as views,
-             count(distinct vid) as visitors,
-             round((count(*) filter (where type='heartbeat')) * ${HB_SECONDS} / 60.0) as watch_min
-      from events
-      group by 1 order by views desc limit 25`;
-
-    const langs = await sql`
-      select coalesce(lang,'??') as lang, count(*) filter (where type='view') as views
-      from events group by 1 order by views desc limit 20`;
-
-    const referrers = await sql`
-      select case when ref is null or ref='' then '(direct)' else ref end as ref,
-             count(*) filter (where type='view') as views
-      from events group by 1 order by views desc limit 15`;
-
-    res.setHeader("Cache-Control", "no-store");
+    const hb = Number(r[1] || 0);
     res.status(200).json({
-      ok: true,
-      generatedAt: new Date().toISOString(),
+      ok: true, storage: true, generatedAt: new Date().toISOString(),
       totals: {
-        views: Number(totals.views || 0),
-        visitors: Number(totals.visitors || 0),
-        views24h: Number(totals.views_24h || 0),
-        activeNow: Number(totals.active_now || 0),
-        watchHours: +(watchSeconds / 3600).toFixed(1),
+        views: Number(r[0] || 0),
+        visitors: Number(r[2] || 0),
+        views24h,
+        activeNow: Number(r[10] || 0),
+        watchHours: +(hb * HB_SECONDS / 3600).toFixed(1),
       },
       timeline, countries, pages, langs, referrers,
     });
   } catch (e) {
-    res.status(500).json({ error: String(e && e.message || e) });
+    res.status(500).json({ error: String((e && e.message) || e) });
   }
 };

@@ -462,7 +462,8 @@ function adminPage() {
     <button class="btn" id="loginBtn" style="width:100%">Sign in</button>
     <div class="err" id="loginErr"></div>
     <div class="muted" style="color:var(--muted);font-size:12px;margin-top:12px">
-      Set <code>ADMIN_KEY</code> &amp; <code>DATABASE_URL</code> in Vercel env vars.
+      Default password: <code>060101</code>. For live stats, connect a free
+      <b>Vercel KV</b> store (no database setup, no SQL).
     </div>
   </div>
 
@@ -471,6 +472,11 @@ function adminPage() {
       <button class="btn" id="refreshBtn">↻ Refresh</button>
       <span class="muted" id="updated"></span>
       <span style="margin-left:auto"><a href="#" id="logout" class="muted">Logout</a></span>
+    </div>
+    <div id="storageWarn" class="panel" style="display:none;border-color:#7a5b00;background:#211a00">
+      ⚠️ <b>No storage connected</b> — analytics are not being recorded yet.
+      In Vercel → Storage → create a free <b>KV</b> store and connect it to this project, then redeploy.
+      The dashboard will then fill automatically (no database, no SQL).
     </div>
     <div class="cards" id="cards"></div>
 
@@ -482,7 +488,7 @@ function adminPage() {
     <div class="grid2">
       <div class="panel">
         <h2>🌍 Top countries</h2>
-        <table id="countries"><thead><tr><th>Country</th><th class="num">Visitors</th><th class="num">Views</th><th class="num">Watch (min)</th></tr></thead><tbody></tbody></table>
+        <table id="countries"><thead><tr><th>Country</th><th class="num">Views</th><th class="num">Watch (min)</th></tr></thead><tbody></tbody></table>
       </div>
       <div class="panel">
         <h2>📄 Top pages</h2>
@@ -527,6 +533,7 @@ function adminPage() {
   function card(n,l,cls){ return '<div class="stat '+(cls||'')+'"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
   function render(d){
     if(!d.totals) return;
+    document.getElementById('storageWarn').style.display = (d.storage===false)?'block':'none';
     var t=d.totals;
     document.getElementById('cards').innerHTML =
       card(t.activeNow,'Active now','live')+card(t.visitors.toLocaleString(),'Unique visitors')+
@@ -542,7 +549,7 @@ function adminPage() {
     }).join('') : '<span class="muted" style="color:var(--muted)">No data yet.</span>';
 
     fill('countries', d.countries, function(r){
-      return '<td><span class="flagc">'+flag(r.country)+'</span> '+r.country+'</td><td class="num">'+r.visitors+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
+      return '<td><span class="flagc">'+flag(r.country)+'</span> '+r.country+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
     fill('pages', d.pages, function(r){
       return '<td>'+esc(r.path)+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
     fill('langs', d.langs, function(r){ return '<td>'+r.lang+'</td><td class="num">'+r.views+'</td>'; });

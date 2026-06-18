@@ -1,7 +1,8 @@
-// Analytics beacon collector (Vercel serverless function).
-// Receives pageviews + heartbeats and stores them in Neon Postgres.
-// Country/city are read from Vercel's geo headers automatically.
-const { neon } = require("@neondatabase/serverless");
+// Analytics beacon collector (Vercel serverless function) — Vercel KV storage.
+// Records pageviews + heartbeats. Country/city come from Vercel geo headers.
+// No database required: uses Vercel KV (Upstash Redis) over REST if connected;
+// if no store is connected, it silently no-ops (the site keeps working).
+const { enabled, pipe } = require("./_kv");
 
 function readRaw(req) {
   return new Promise((resolve) => {
@@ -14,9 +15,8 @@ function readRaw(req) {
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") { res.status(405).end(); return; }
-  if (!process.env.DATABASE_URL) { res.status(200).end(); return; }
+  if (!enabled) { res.status(200).end(); return; }
 
-  // Body may arrive parsed (JSON) or raw (sendBeacon text/plain)
   let b = req.body;
   if (b === undefined || b === null || b === "") {
     const raw = await readRaw(req);
@@ -28,29 +28,36 @@ module.exports = async (req, res) => {
 
   const h = req.headers;
   const country = h["x-vercel-ip-country"] || null;
-  let city = h["x-vercel-ip-city"] || null;
-  try { if (city) city = decodeURIComponent(city); } catch (e) {}
-  const ua = (h["user-agent"] || "").slice(0, 300) || null;
+  const ua = h["user-agent"] || "";
+  const isBot = /bot|crawl|spider|preview|monitor|lighthouse/i.test(ua);
+  if (isBot) { res.status(200).end(); return; }
 
   const type = b.type === "heartbeat" ? "heartbeat" : "view";
-  const path = (b.path || "").slice(0, 300) || null;
-  const ref = (b.ref || "").slice(0, 300) || null;
-  const lang = (b.lang || "").slice(0, 10) || null;
-  const vid = (b.vid || "").slice(0, 40) || null;
+  const path = (b.path || "").slice(0, 200) || "/";
+  const ref = ((b.ref || "").slice(0, 200)) || "(direct)";
+  const lang = (b.lang || "").slice(0, 8) || "??";
+  const vid = (b.vid || "").slice(0, 40) || ("a" + Date.now());
+  const now = Date.now();
+  const hour = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH
 
-  try {
-    const sql = neon(process.env.DATABASE_URL);
-    await sql`create table if not exists events (
-      id bigserial primary key,
-      ts timestamptz not null default now(),
-      type text, path text, ref text,
-      country text, city text, lang text, ua text, vid text
-    )`;
-    await sql`insert into events (type, path, ref, country, city, lang, ua, vid)
-      values (${type}, ${path}, ${ref}, ${country}, ${city}, ${lang}, ${ua}, ${vid})`;
-    res.status(204).end();
-  } catch (e) {
-    // Never break the page over analytics
-    res.status(200).end();
+  const cmds = [];
+  if (type === "view") {
+    cmds.push(["INCR", "views:total"]);
+    cmds.push(["PFADD", "visitors:all", vid]);
+    cmds.push(["HINCRBY", "traffic:hour", hour, 1]);
+    cmds.push(["HINCRBY", "page:views", path, 1]);
+    cmds.push(["HINCRBY", "lang:views", lang, 1]);
+    cmds.push(["HINCRBY", "ref:views", ref, 1]);
+    if (country) cmds.push(["HINCRBY", "country:views", country, 1]);
+  } else {
+    cmds.push(["INCR", "hb:total"]);
+    cmds.push(["HINCRBY", "page:watch", path, 1]);
+    if (country) cmds.push(["HINCRBY", "country:watch", country, 1]);
   }
+  // presence (active in last 5 min)
+  cmds.push(["ZADD", "active", now, vid]);
+  cmds.push(["ZREMRANGEBYSCORE", "active", 0, now - 300000]);
+
+  try { await pipe(cmds); } catch (e) {}
+  res.status(204).end();
 };
