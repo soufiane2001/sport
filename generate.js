@@ -506,6 +506,14 @@ function adminPage() {
   .toolbar .muted{color:var(--muted);font-size:12px}
   .err{color:#ff6b6b;font-size:13px;margin-top:8px}
   .flagc{display:inline-block;width:22px}
+  .srow-edit{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center}
+  #srvRows input,#srvRows select{background:var(--bg3);border:1px solid var(--line);color:var(--text);
+    padding:6px 8px;border-radius:5px;font-size:12px;outline:none}
+  #srvRows input:focus{border-color:var(--purple)}
+  #srvRows button{background:var(--bg3);border:1px solid var(--line);color:var(--text);
+    border-radius:5px;padding:5px 9px;cursor:pointer;font-size:12px}
+  #srvRows button:hover{border-color:var(--purple)}
+  #srvRows label{font-size:12px;display:flex;align-items:center;gap:4px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -565,6 +573,19 @@ function adminPage() {
         <table id="refs"><thead><tr><th>Source</th><th class="num">Views</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
+    <div class="panel" id="srvPanel">
+      <h2>Streams / Servers <span class="muted" id="srvMsg" style="font-size:12px;font-weight:400"></span></h2>
+      <div id="srvRows"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="srvAdd">+ Add server</button>
+        <button class="btn" id="srvSave">Save (apply live)</button>
+        <button class="btn" id="srvReload" style="background:var(--bg3);color:var(--text)">Reload</button>
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:8px">
+        Order = priority (the player tries them top to bottom). <b>Proxy</b> = route via Vercel
+        (bypasses geo-blocks &amp; upgrades HTTP→HTTPS). Changes apply instantly, no redeploy. Requires Vercel KV.
+      </div>
+    </div>
     <div class="err" id="dashErr"></div>
   </div>
 </div>
@@ -573,6 +594,7 @@ function adminPage() {
 (function(){
   var login=document.getElementById('login'), dash=document.getElementById('dash');
   var keyInput=document.getElementById('key');
+  var srvLoaded=false;
   function flag(cc){ if(!cc||cc.length!==2||cc==='??') return '🏳️';
     return String.fromCodePoint.apply(null,[...cc.toUpperCase()].map(c=>0x1F1E6+c.charCodeAt(0)-65)); }
   function getKey(){ try{return sessionStorage.getItem('sl_admin')||'';}catch(e){return '';} }
@@ -586,6 +608,7 @@ function adminPage() {
       var d=await r.json();
       if(d.error){ document.getElementById('dashErr').textContent=d.error; }
       render(d); show(true);
+      if(!srvLoaded){ srvLoaded=true; srvLoad(); }
     }catch(e){ document.getElementById('dashErr').textContent='Load failed: '+e; show(true); }
   }
   function show(ok){ login.style.display=ok?'none':'block'; dash.style.display=ok?'block':'none'; }
@@ -637,6 +660,52 @@ function adminPage() {
   keyInput.addEventListener('keydown',function(e){ if(e.key==='Enter'){ setKey(keyInput.value.trim()); load(); } });
   document.getElementById('refreshBtn').onclick=load;
   document.getElementById('logout').onclick=function(e){ e.preventDefault(); try{sessionStorage.removeItem('sl_admin');}catch(x){} show(false); };
+
+  /* ---- Servers management ---- */
+  var srvRows=document.getElementById('srvRows');
+  function attr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+  function srvMsg(m){ document.getElementById('srvMsg').textContent=m||''; }
+  function srvList(){ return [].map.call(srvRows.children,function(row){ return {
+    name:row.querySelector('.s-name').value, url:row.querySelector('.s-url').value,
+    type:row.querySelector('.s-type').value, proxy:row.querySelector('.s-proxy').checked }; }); }
+  function srvRow(s){
+    return '<div class="srow-edit">'
+      +'<input class="s-name" placeholder="Name" value="'+attr(s.name)+'" style="width:120px">'
+      +'<input class="s-url" placeholder="https://...m3u8" value="'+attr(s.url)+'" style="flex:1;min-width:220px">'
+      +'<select class="s-type">'
+      +'<option value="hls"'+(s.type==='hls'?' selected':'')+'>hls</option>'
+      +'<option value="dash"'+(s.type==='dash'?' selected':'')+'>dash</option>'
+      +'<option value="auto"'+(s.type==='auto'?' selected':'')+'>auto</option></select>'
+      +'<label><input type="checkbox" class="s-proxy"'+(s.proxy?' checked':'')+'> proxy</label>'
+      +'<button class="s-up">Up</button><button class="s-down">Down</button><button class="s-del">Remove</button>'
+      +'</div>';
+  }
+  function srvRender(list){
+    srvRows.innerHTML = (list&&list.length)? list.map(srvRow).join('') : srvRow({name:'Server 1',url:'',type:'hls',proxy:false});
+    [].forEach.call(srvRows.children,function(row,idx){
+      row.querySelector('.s-del').onclick=function(){ var l=srvList(); l.splice(idx,1); srvRender(l); };
+      row.querySelector('.s-up').onclick=function(){ var l=srvList(); if(idx>0){ var t=l[idx-1]; l[idx-1]=l[idx]; l[idx]=t; srvRender(l);} };
+      row.querySelector('.s-down').onclick=function(){ var l=srvList(); if(idx<l.length-1){ var t=l[idx+1]; l[idx+1]=l[idx]; l[idx]=t; srvRender(l);} };
+    });
+  }
+  function srvLoad(){
+    fetch('/api/servers/?raw=1&key='+encodeURIComponent(getKey()))
+      .then(function(r){return r.json();})
+      .then(function(d){ srvRender(d.raw||[]); srvMsg(''); })
+      .catch(function(){ srvMsg('load failed'); });
+  }
+  document.getElementById('srvAdd').onclick=function(){ var l=srvList(); l.push({name:'Server '+(l.length+1),url:'',type:'hls',proxy:false}); srvRender(l); };
+  document.getElementById('srvReload').onclick=srvLoad;
+  document.getElementById('srvSave').onclick=function(){
+    var l=srvList().filter(function(s){ return /^https?:\/\//i.test((s.url||'').trim()); });
+    if(!l.length){ srvMsg('No valid server URL (must start with http/https)'); return; }
+    srvMsg('saving…');
+    fetch('/api/servers/?key='+encodeURIComponent(getKey()),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({servers:l})})
+      .then(function(r){return r.json();})
+      .then(function(d){ srvMsg(d.ok?('Saved '+d.count+' servers — applied live ✓'):(d.error||'error')); })
+      .catch(function(){ srvMsg('save failed'); });
+  };
+
   load();
   setInterval(function(){ if(getKey()&&dash.style.display!=='none') load(); }, 12000);
 })();
