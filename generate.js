@@ -193,6 +193,40 @@ function scripts(lang) {
 </html>`;
 }
 
+/* ---------------- full schedule (all 104 matches) ---------------- */
+function scheduleRow(lang, m) {
+  const T = t[lang];
+  return `
+      <a class="srow" href="${matchPath(lang, m.slug)}">
+        <span class="srow-num">#${m.num}</span>
+        <span class="srow-teams">${esc(m.teamA)} <i>${esc(T.vs)}</i> ${esc(m.teamB)}</span>
+        <span class="srow-meta">${esc(fmtDate(m.dateISO, lang))} · ${esc(m.city)}</span>
+      </a>`;
+}
+function fullSchedule(lang) {
+  const T = t[lang];
+  let out = "";
+  // group stage by group letter
+  const groups = {};
+  matches.filter((m) => m.stage === "group").forEach((m) => {
+    (groups[m.group] = groups[m.group] || []).push(m);
+  });
+  Object.keys(groups).sort().forEach((g) => {
+    out += `<div class="sched-block"><h3>${esc(T.group)} ${g}</h3><div class="sched-list">` +
+      groups[g].map((m) => scheduleRow(lang, m)).join("") + `</div></div>`;
+  });
+  // knockout stages
+  const ko = [["r32", T.stage.r32], ["r16", T.stage.r16], ["qf", T.stage.qf],
+    ["sf", T.stage.sf], ["third", T.stage.third], ["final", T.stage.final]];
+  ko.forEach(([key, label]) => {
+    const ms = matches.filter((m) => m.stage === key);
+    if (!ms.length) return;
+    out += `<div class="sched-block"><h3>${esc(label)}</h3><div class="sched-list">` +
+      ms.map((m) => scheduleRow(lang, m)).join("") + `</div></div>`;
+  });
+  return `<div class="sched">${out}</div>`;
+}
+
 /* ---------------- pages ---------------- */
 function homePage(lang) {
   const T = t[lang];
@@ -247,8 +281,9 @@ ${topbar(lang, { buildPath })}
       <div class="grid">${cards}</div>
     </section>
     <section class="section" id="schedule">
-      <h2>${esc(T.full_schedule)}</h2>
+      <h2>${esc(T.full_schedule)} — ${matches.length} ${esc(T.nav_matches)}</h2>
       <p style="color:var(--muted)">${esc(T.seo_home_desc)}</p>
+      ${fullSchedule(lang)}
     </section>
     ${footer(lang, { buildPath })}
   </main>

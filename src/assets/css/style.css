@@ -130,6 +130,21 @@ img{max-width:100%}
 .footer .langs a{color:var(--muted);padding:3px 8px;border:1px solid var(--line);border-radius:5px}
 .footer .langs a:hover{color:var(--text);border-color:var(--purple)}
 
+/* ---------- Full schedule (all 104 matches) ---------- */
+.sched{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;margin-top:16px}
+.sched-block{background:var(--bg2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.sched-block h3{margin:0;padding:11px 14px;font-size:14px;background:var(--bg3);
+  border-bottom:1px solid var(--line);color:var(--purple)}
+.sched-list{display:flex;flex-direction:column}
+.srow{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line)}
+.srow:last-child{border-bottom:0}
+.srow:hover{background:var(--bg3)}
+.srow-num{color:var(--muted);font-size:11px;font-weight:700;min-width:34px}
+.srow-teams{flex:1;font-weight:600;font-size:13px}
+.srow-teams i{color:var(--muted);font-style:normal;font-weight:400;padding:0 3px}
+.srow-meta{color:var(--muted);font-size:11px;white-space:nowrap;text-align:right}
+@media(max-width:520px){.srow-meta{display:none}}
+
 /* ---------- Match meta table ---------- */
 .meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:12px}
 .meta-grid .mi{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:12px}
