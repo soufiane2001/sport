@@ -12,10 +12,12 @@
 // Run `node generate.js` after editing.
 
 const DEFAULT_SOURCES = [
-  // Direct (fast) — works in most countries.
-  { name: "Server 1 · HD", url: "https://nl1.nghk.ai/ArenaPremium1HD/index.m3u8", type: "hls" },
-  // Proxied via Vercel — bypasses geo-blocks (e.g. Morocco). Auto-used if S1 fails.
-  { name: "Server 2 · Proxy", url: "https://nl1.nghk.ai/ArenaPremium1HD/index.m3u8", type: "hls", proxy: true },
+  // Server 1 — M6 (https + CORS *), plays directly. Not blocked in Morocco.
+  { name: "Server 1 · HD", url: "https://origin-m6web.live.6cloud.fr/out/v1/6play/6play-m6/cmaf_q2hyb21h/index-hd720.m3u8", type: "hls" },
+  // Server 2 — CT Sport (HTTP, no CORS): MUST go through the proxy (HTTPS upgrade + CORS).
+  { name: "Server 2 · Sport", url: "http://88.212.15.19/live/test_ctsport_25p/playlist.m3u8", type: "hls", proxy: true },
+  // Server 3 — Arena Premium via proxy (geo-bypass backup).
+  { name: "Server 3 · Arena", url: "https://nl1.nghk.ai/ArenaPremium1HD/index.m3u8", type: "hls", proxy: true },
 ];
 
 // Optional: reusable channel sources you can point matches to.

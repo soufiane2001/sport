@@ -4,7 +4,7 @@ module.exports = {
   domainBare: "https://sportalive.live",
   siteName: "SportaLive",
   // The live stream to diffuse (HLS .m3u8). See data/streams.js for per-match sources.
-  streamUrl: "https://nl1.nghk.ai/ArenaPremium1HD/index.m3u8",
+  streamUrl: "https://origin-m6web.live.6cloud.fr/out/v1/6play/6play-m6/cmaf_q2hyb21h/index-hd720.m3u8",
   // Monetization popunder smartlink (effectivecpmnetwork)
   adPopunder: "https://www.effectivecpmnetwork.com/jq97y8476?key=5ec0e0d291bbb0478b835617c8b2c877",
   // Default / source language
