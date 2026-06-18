@@ -9,6 +9,8 @@ module.exports = {
   adPopunder: "https://www.effectivecpmnetwork.com/hcaq4nu9f5?key=3bc0543a8c18dd8145fd0b0ef8cede34",
   // Popunder min interval in ms (fires on a user gesture, at most this often)
   adPopunderGapMs: 60000,
+  // Auto full-screen interstitial ad interval in ms (in-page overlay, never blocked)
+  adInterstitialGapMs: 120000,
   // Native/banner ad (effectivecpmnetwork invoke.js)
   adNativeSrc: "https://pl29569991.effectivecpmnetwork.com/8c2948cd379e7f712c043acbbd7ad4dd/invoke.js",
   adNativeId: "container-8c2948cd379e7f712c043acbbd7ad4dd",

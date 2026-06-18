@@ -22,6 +22,28 @@
     document.addEventListener("click", maybeOpen, true);
     document.addEventListener("touchstart", maybeOpen, true);
     document.addEventListener("keydown", maybeOpen, true);
+
+    /* Auto full-screen interstitial every N minutes (in-page overlay = never blocked).
+       Clicking "Continue" opens the smartlink in a new tab (allowed: it's a user click). */
+    var INT_GAP = window.SPORTALIVE_INT_GAP || 120000;
+    function showInterstitial() {
+      if (document.getElementById("sl-int")) return;
+      var ov = document.createElement("div");
+      ov.id = "sl-int";
+      ov.innerHTML =
+        '<div class="sl-int-box">' +
+          '<div class="sl-int-h">Advertisement</div>' +
+          '<a class="sl-int-cta" href="' + AD_URL + '" target="_blank" rel="noopener">Continue to stream</a>' +
+          '<button class="sl-int-x" type="button">Skip ad</button>' +
+        "</div>";
+      document.body.appendChild(ov);
+      function close() { try { ov.parentNode.removeChild(ov); } catch (e) {} }
+      ov.querySelector(".sl-int-cta").addEventListener("click", function () { setTimeout(close, 60); });
+      ov.querySelector(".sl-int-x").addEventListener("click", close);
+      ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+    }
+    setTimeout(showInterstitial, INT_GAP);
+    setInterval(showInterstitial, INT_GAP);
   })();
 
   /* ---------------- Multi-source live player (DASH + HLS) ---------------- */

@@ -122,6 +122,18 @@ img{max-width:100%}
 .chat-foot input{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);
   padding:9px 10px;border-radius:6px;outline:none}
 
+/* ---------- Auto interstitial ad ---------- */
+#sl-int{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.78);
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.sl-int-box{background:var(--bg2);border:1px solid var(--line);border-radius:14px;
+  max-width:430px;width:100%;padding:26px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.sl-int-h{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:18px}
+.sl-int-cta{display:block;background:var(--purple);color:#fff;font-weight:800;
+  padding:16px;border-radius:9px;font-size:17px;text-decoration:none}
+.sl-int-cta:hover{background:var(--purple2)}
+.sl-int-x{display:block;margin:14px auto 0;background:transparent;border:0;
+  color:var(--muted);cursor:pointer;font-size:13px;text-decoration:underline}
+
 /* ---------- Native ad slot ---------- */
 .ad-native{text-align:center}
 .ad-native > div{margin:0 auto;max-width:100%}
