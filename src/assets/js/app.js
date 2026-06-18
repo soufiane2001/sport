@@ -81,7 +81,7 @@
       if (!serverBar) return;
       serverBar.innerHTML = sources.map(function (s, i) {
         var on = (i === current && started) ? " active" : "";
-        return '<button class="srv' + on + '" data-i="' + i + '">📡 ' +
+        return '<button class="srv' + on + '" data-i="' + i + '">' +
           (s.name || ("Server " + (i + 1))) + "</button>";
       }).join("");
       Array.prototype.forEach.call(serverBar.querySelectorAll("button"), function (b) {
@@ -118,9 +118,9 @@
   if (chatBody) {
     var names = ["Goal_Hunter", "UltrasFan", "El10", "KeeperZone", "MidfieldMaestro",
       "TikiTaka", "VARkiller", "OffsideKing", "CornerFlag", "DerbyDay", "HatTrick"];
-    var msgs = ["GOOOAL!!! 🔥", "What a save!", "ref is blind 😡", "best stream ever 🙌",
-      "where are you watching from?", "🇧🇷🇧🇷🇧🇷", "this is class", "penalty!!", "let's go!!!",
-      "free and HD, thanks", "offside clearly", "GG", "what a match ⚽", "🐐 moment"];
+    var msgs = ["GOOOAL!!!", "What a save!", "ref is blind", "best stream ever",
+      "where are you watching from?", "let's go!!!", "this is class", "penalty!!",
+      "free and HD, thanks", "offside clearly", "GG", "what a match", "what a goal"];
     var colors = ["c1", "c2", "c3", "c4", "c5"];
     function addMsg() {
       var d = document.createElement("div");

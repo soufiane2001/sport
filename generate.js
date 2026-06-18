@@ -111,6 +111,9 @@ function head(lang, o) {
   <meta name="twitter:image" content="${esc(ogImg)}" />
 ${hreflangTags(o.buildPath)}  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://cdn.dashjs.org" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" />
   <link rel="stylesheet" href="/assets/css/style.css" />
   <script type="application/ld+json">${JSON.stringify(o.jsonld)}</script>
 </head>
@@ -127,7 +130,7 @@ function topbar(lang, o) {
   const T = t[lang];
   return `
 <header class="topbar">
-  <a class="brand" href="${homePath(lang)}"><span class="dot">▶</span>Sporta<b>Live</b></a>
+  <a class="brand" href="${homePath(lang)}">Sporta<b>Live</b></a>
   <nav class="nav-links">
     <a href="${homePath(lang)}">${esc(T.nav_home)}</a>
     <a href="${homePath(lang)}#matches">${esc(T.nav_matches)}</a>
@@ -135,12 +138,11 @@ function topbar(lang, o) {
   </nav>
   <div class="search" id="searchBox">
     <input type="text" id="searchInput" placeholder="${esc(T.nav_matches)}… (104)" aria-label="search" autocomplete="off" />
-    <button aria-label="search">🔍</button>
     <div class="search-results" id="searchResults"></div>
   </div>
   <div class="topbar-right">
     <select class="lang-select" id="langSelect" aria-label="Language">${opts}</select>
-    <a class="btn" href="${homePath(lang)}#live">● ${esc(T.nav_live)}</a>
+    <a class="btn" href="${homePath(lang)}#live">${esc(T.nav_live)}</a>
   </div>
 </header>`;
 }
@@ -373,13 +375,13 @@ ${topbar(lang, { buildPath })}
       <span>${esc(matchTitleText(lang, m))}</span>
     </nav>
     <div class="player-wrap">
-      <span class="live-badge">● ${esc(T.nav_live)}</span>
-      <span class="viewers-badge">👁 <span id="viewerCount">0</span> ${esc(T.viewers)}</span>
+      <span class="live-badge">${esc(T.nav_live)}</span>
+      <span class="viewers-badge"><span id="viewerCount">0</span> ${esc(T.viewers)}</span>
       <video id="player" playsinline controls preload="none"></video>
       <div class="player-overlay" id="playerOverlay">
         <div class="big">${esc(matchTitleText(lang, m))}</div>
-        <button class="play-btn" id="startBtn" aria-label="Play">▶</button>
-        <div style="color:#adadb8">${esc(T.watch_live)} · ${esc(T.free_stream)}</div>
+        <button class="play-btn" id="startBtn">${esc(T.watch_live)}</button>
+        <div style="color:#d6c8f5">${esc(T.free_stream)}</div>
       </div>
     </div>
     <div class="info-bar">
@@ -476,13 +478,13 @@ function adminPage() {
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="/"><span class="dot">▶</span>Sporta<b>Live</b></a>
+  <a class="brand" href="/">Sporta<b>Live</b></a>
   <div style="margin-left:auto;font-weight:700;color:var(--muted)">Admin · Analytics</div>
 </header>
 
 <div class="wrap">
   <div id="login" class="login">
-    <h1>🔒 Admin Access</h1>
+    <h1>Admin Access</h1>
     <input id="key" type="password" placeholder="Admin key" autocomplete="current-password"/>
     <button class="btn" id="loginBtn" style="width:100%">Sign in</button>
     <div class="err" id="loginErr"></div>
@@ -490,12 +492,12 @@ function adminPage() {
 
   <div id="dash" style="display:none">
     <div class="toolbar">
-      <button class="btn" id="refreshBtn">↻ Refresh</button>
+      <button class="btn" id="refreshBtn">Refresh</button>
       <span class="muted" id="updated"></span>
       <span style="margin-left:auto"><a href="#" id="logout" class="muted">Logout</a></span>
     </div>
     <div id="storageWarn" class="panel" style="display:none;border-color:#7a5b00;background:#211a00">
-      ⚠️ <b>No storage connected</b> — analytics are not being recorded yet.
+      <b>No storage connected</b> — analytics are not being recorded yet.
       In Vercel → Storage → create a free <b>KV</b> store and connect it to this project, then redeploy.
       The dashboard will then fill automatically (no database, no SQL).
     </div>
@@ -508,21 +510,21 @@ function adminPage() {
 
     <div class="grid2">
       <div class="panel">
-        <h2>🌍 Top countries</h2>
+        <h2>Top countries</h2>
         <table id="countries"><thead><tr><th>Country</th><th class="num">Views</th><th class="num">Watch (min)</th></tr></thead><tbody></tbody></table>
       </div>
       <div class="panel">
-        <h2>📄 Top pages</h2>
+        <h2>Top pages</h2>
         <table id="pages"><thead><tr><th>Path</th><th class="num">Views</th><th class="num">Watch (min)</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
     <div class="grid2">
       <div class="panel">
-        <h2>🗣 Languages</h2>
+        <h2>Languages</h2>
         <table id="langs"><thead><tr><th>Lang</th><th class="num">Views</th></tr></thead><tbody></tbody></table>
       </div>
       <div class="panel">
-        <h2>🔗 Referrers</h2>
+        <h2>Referrers</h2>
         <table id="refs"><thead><tr><th>Source</th><th class="num">Views</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
@@ -570,7 +572,7 @@ function adminPage() {
     }).join('') : '<span class="muted" style="color:var(--muted)">No data yet.</span>';
 
     fill('countries', d.countries, function(r){
-      return '<td><span class="flagc">'+flag(r.country)+'</span> '+r.country+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
+      return '<td>'+r.country+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
     fill('pages', d.pages, function(r){
       return '<td>'+esc(r.path)+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
     fill('langs', d.langs, function(r){ return '<td>'+r.lang+'</td><td class="num">'+r.views+'</td>'; });
