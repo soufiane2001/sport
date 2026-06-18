@@ -57,9 +57,27 @@
         dashPlayer.on(window.dashjs.MediaPlayer.events.ERROR, onErr);
       } else if (ty === "hls") {
         if (window.Hls && window.Hls.isSupported()) {
-          hls = new window.Hls({ lowLatencyMode: true });
-          hls.loadSource(s.url); hls.attachMedia(video);
-          hls.on(window.Hls.Events.ERROR, function (e, d) { if (d && d.fatal) onErr(); });
+          hls = new window.Hls({
+            lowLatencyMode: true,
+            manifestLoadingMaxRetry: 6, manifestLoadingRetryDelay: 800,
+            levelLoadingMaxRetry: 6, fragLoadingMaxRetry: 8,
+          });
+          var recov = 0;
+          hls.loadSource(s.url);
+          hls.attachMedia(video);
+          hls.on(window.Hls.Events.MANIFEST_PARSED, function () {
+            video.play().catch(function () {});
+          });
+          hls.on(window.Hls.Events.ERROR, function (e, d) {
+            if (!d || !d.fatal) return; // ignore recoverable warnings
+            if (d.type === window.Hls.ErrorTypes.NETWORK_ERROR) {
+              if (recov++ < 4) { setTimeout(function () { try { hls.startLoad(); } catch (x) {} }, 1000); }
+              else onErr();
+            } else if (d.type === window.Hls.ErrorTypes.MEDIA_ERROR) {
+              if (recov++ < 4) { try { hls.recoverMediaError(); } catch (x) {} }
+              else onErr();
+            } else { onErr(); }
+          });
         } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
           video.src = s.url; video.play().catch(onErr);
         } else { onErr(); }
