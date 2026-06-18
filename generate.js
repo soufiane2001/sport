@@ -10,6 +10,7 @@ const path = require("path");
 const cfg = require("./data/config");
 const { LANGS, RTL, t } = require("./data/i18n");
 const { build } = require("./data/matches");
+const streams = require("./data/streams");
 
 const ROOT = __dirname;
 const OUT = path.join(ROOT, "public"); // Vercel output directory
@@ -184,10 +185,12 @@ function footer(lang, o) {
 </footer>`;
 }
 
-function scripts(lang) {
+function scripts(lang, sources) {
+  const src = sources || streams.DEFAULT_SOURCES;
   return `
-<script>window.SPORTALIVE_MPD=${JSON.stringify(cfg.streamMpd)};window.SPORTALIVE_AD=${JSON.stringify(cfg.adPopunder)};</script>
+<script>window.SPORTALIVE_SOURCES=${JSON.stringify(src)};window.SPORTALIVE_AD=${JSON.stringify(cfg.adPopunder)};</script>
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <script src="/assets/js/app.js"></script>
 </body>
 </html>`;
@@ -293,7 +296,7 @@ ${topbar(lang, { buildPath })}
   const html = head(lang, {
     title: T.seo_home_title, desc: T.seo_home_desc,
     canonicalPath: homePath(lang), buildPath, jsonld,
-  }) + body + scripts(lang);
+  }) + body + scripts(lang, streams.DEFAULT_SOURCES);
 
   writeFile(lang === cfg.defaultLang ? "index.html" : `${lang}/index.html`, html);
 }
@@ -386,6 +389,7 @@ ${topbar(lang, { buildPath })}
         <span class="tag">${esc(m.venue)}</span>
         <span class="tag">${esc(m.city)}, ${esc(m.country)}</span>
       </div>
+      <div class="servers" id="serverBar"></div>
       <div class="meta-grid">
         <div class="mi"><div class="k">${esc(T.kickoff)}</div><div class="v">${esc(dateStr)}</div></div>
         <div class="mi"><div class="k">${esc(T.kickoff)} (UTC)</div><div class="v">${esc(timeStr)}</div></div>
@@ -413,7 +417,7 @@ ${topbar(lang, { buildPath })}
   const html = head(lang, {
     title, desc, canonicalPath: matchPath(lang, m.slug),
     buildPath, jsonld, ogType: "video.other",
-  }) + body + scripts(lang);
+  }) + body + scripts(lang, streams.sourcesFor(m.slug));
 
   const rel = lang === cfg.defaultLang
     ? `match/${m.slug}/index.html`

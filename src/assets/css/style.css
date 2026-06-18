@@ -87,6 +87,11 @@ img{max-width:100%}
 .info-bar{padding:14px 18px;border-bottom:1px solid var(--line)}
 .info-bar h1{font-size:20px;margin:0 0 6px}
 .info-bar .sub{color:var(--muted)}
+.servers{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.servers .srv{background:var(--bg3);color:var(--text);border:1px solid var(--line);
+  padding:8px 14px;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer}
+.servers .srv:hover{border-color:var(--purple)}
+.servers .srv.active{background:var(--purple);border-color:var(--purple);color:#fff}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .tag{background:var(--bg3);color:var(--text);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
 

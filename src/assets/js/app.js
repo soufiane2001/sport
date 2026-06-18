@@ -25,48 +25,74 @@
   }
   armPopunder();
 
-  /* ---------------- DASH player ---------------- */
-  var video = document.getElementById("player");
-  var mpd = window.SPORTALIVE_MPD;
-  var overlay = document.getElementById("playerOverlay");
-  var started = false;
+  /* ---------------- Multi-source live player (DASH + HLS) ---------------- */
+  (function () {
+    var video = document.getElementById("player");
+    var overlay = document.getElementById("playerOverlay");
+    var serverBar = document.getElementById("serverBar");
+    var sources = window.SPORTALIVE_SOURCES || [];
+    if (!video || !sources.length) return;
 
-  function startPlayer() {
-    if (started || !video || !mpd) return;
-    started = true;
-    if (overlay) overlay.style.display = "none";
+    var current = 0, dashPlayer = null, hls = null, started = false;
 
-    if (window.dashjs && window.dashjs.MediaPlayer) {
-      var player = window.dashjs.MediaPlayer().create();
-      player.updateSettings({
-        streaming: { buffer: { fastSwitchEnabled: true } },
-      });
-      player.initialize(video, mpd, true);
-      player.on(window.dashjs.MediaPlayer.events.ERROR, function () {
-        showError();
-      });
-    } else {
-      // Fallback (native HLS/DASH if browser supports)
-      video.src = mpd;
-      video.play().catch(showError);
+    function destroy() {
+      try { if (dashPlayer) { dashPlayer.reset(); dashPlayer = null; } } catch (e) {}
+      try { if (hls) { hls.destroy(); hls = null; } } catch (e) {}
+      try { video.removeAttribute("src"); video.load(); } catch (e) {}
     }
-  }
-
-  function showError() {
-    if (!overlay) return;
-    overlay.style.display = "flex";
-    overlay.innerHTML =
-      '<div class="big">Stream unavailable</div>' +
-      '<div style="color:#adadb8;max-width:380px">The live channel could not be loaded ' +
-      "(it may be geo-restricted or offline). Please try again later.</div>";
-  }
-
-  var startBtn = document.getElementById("startBtn");
-  if (startBtn) startBtn.addEventListener("click", startPlayer);
-  // Auto-start muted attempt (some streams require gesture)
-  if (video && mpd) {
-    video.muted = false;
-  }
+    function typeOf(s) {
+      if (s.type && s.type !== "auto") return s.type;
+      if (/\.m3u8(\?|$)/i.test(s.url)) return "hls";
+      if (/\.mpd(\?|$)/i.test(s.url)) return "dash";
+      return "auto";
+    }
+    function play(i) {
+      var s = sources[i]; if (!s) return;
+      current = i; started = true; destroy();
+      if (overlay) overlay.style.display = "none";
+      var ty = typeOf(s);
+      if (ty === "dash" && window.dashjs && window.dashjs.MediaPlayer) {
+        dashPlayer = window.dashjs.MediaPlayer().create();
+        dashPlayer.updateSettings({ streaming: { buffer: { fastSwitchEnabled: true } } });
+        dashPlayer.initialize(video, s.url, true);
+        dashPlayer.on(window.dashjs.MediaPlayer.events.ERROR, onErr);
+      } else if (ty === "hls") {
+        if (window.Hls && window.Hls.isSupported()) {
+          hls = new window.Hls({ lowLatencyMode: true });
+          hls.loadSource(s.url); hls.attachMedia(video);
+          hls.on(window.Hls.Events.ERROR, function (e, d) { if (d && d.fatal) onErr(); });
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = s.url; video.play().catch(onErr);
+        } else { onErr(); }
+      } else {
+        video.src = s.url; video.play().catch(onErr);
+      }
+      renderBar();
+    }
+    function onErr() {
+      if (overlay) {
+        overlay.style.display = "flex";
+        overlay.innerHTML = '<div class="big">Stream unavailable</div>' +
+          '<div style="color:#adadb8;max-width:380px">This source is offline or geo-restricted. ' +
+          "Try another server below.</div>";
+      }
+      renderBar();
+    }
+    function renderBar() {
+      if (!serverBar) return;
+      serverBar.innerHTML = sources.map(function (s, i) {
+        var on = (i === current && started) ? " active" : "";
+        return '<button class="srv' + on + '" data-i="' + i + '">📡 ' +
+          (s.name || ("Server " + (i + 1))) + "</button>";
+      }).join("");
+      Array.prototype.forEach.call(serverBar.querySelectorAll("button"), function (b) {
+        b.onclick = function () { play(+b.getAttribute("data-i")); };
+      });
+    }
+    renderBar();
+    var startBtn = document.getElementById("startBtn");
+    if (startBtn) startBtn.addEventListener("click", function () { play(current); });
+  })();
 
   /* ---------------- Fake live viewers ---------------- */
   var vEl = document.getElementById("viewerCount");
