@@ -200,7 +200,14 @@ function footer(lang, o) {
 }
 
 function scripts(lang, sources) {
-  const src = sources || streams.DEFAULT_SOURCES;
+  const raw = sources || streams.DEFAULT_SOURCES;
+  // Wrap proxied sources so they route through /api/p (bypasses geo-blocks)
+  const src = raw.map((s) => {
+    if (s.proxy && /^https?:\/\//i.test(s.url)) {
+      return { name: s.name, type: s.type, url: "/api/p?u=" + encodeURIComponent(s.url) };
+    }
+    return { name: s.name, type: s.type, url: s.url };
+  });
   return `
 <script>window.SPORTALIVE_SOURCES=${JSON.stringify(src)};window.SPORTALIVE_AD=${JSON.stringify(cfg.adPopunder)};</script>
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>

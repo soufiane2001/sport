@@ -12,7 +12,10 @@
 // Run `node generate.js` after editing.
 
 const DEFAULT_SOURCES = [
+  // Direct (fast) — works in most countries.
   { name: "Server 1 · HD", url: "https://nl1.nghk.ai/ArenaPremium1HD/index.m3u8", type: "hls" },
+  // Proxied via Vercel — bypasses geo-blocks (e.g. Morocco). Auto-used if S1 fails.
+  { name: "Server 2 · Proxy", url: "https://nl1.nghk.ai/ArenaPremium1HD/index.m3u8", type: "hls", proxy: true },
 ];
 
 // Optional: reusable channel sources you can point matches to.

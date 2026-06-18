@@ -87,11 +87,13 @@
       renderBar();
     }
     function onErr() {
+      // Auto-fallback: try the next server (e.g. the geo-bypass proxy)
+      if (current < sources.length - 1) { play(current + 1); return; }
       if (overlay) {
         overlay.style.display = "flex";
         overlay.innerHTML = '<div class="big">Stream unavailable</div>' +
-          '<div style="color:#adadb8;max-width:380px">This source is offline or geo-restricted. ' +
-          "Try another server below.</div>";
+          '<div style="color:#d6c8f5;max-width:380px">All servers failed (offline or blocked). ' +
+          "Please try again later.</div>";
       }
       renderBar();
     }
