@@ -1,4 +1,6 @@
 {
+  "buildCommand": "node generate.js",
+  "outputDirectory": "public",
   "cleanUrls": true,
   "trailingSlash": true,
   "redirects": [

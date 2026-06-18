@@ -12,7 +12,7 @@ const { LANGS, RTL, t } = require("./data/i18n");
 const { build } = require("./data/matches");
 
 const ROOT = __dirname;
-const OUT = ROOT; // deploy from project root
+const OUT = path.join(ROOT, "public"); // Vercel output directory
 const matches = build();
 const COMP = cfg.tournament.name;
 

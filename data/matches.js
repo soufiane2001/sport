@@ -27,20 +27,23 @@ const VENUES = [
   { venue: "BC Place", city: "Vancouver", country: "Canada" },
 ];
 
-// 12 groups (A–L) of 4 teams each — placeholder seeding by strength/region.
+// 12 groups (A–L) of 4 teams each — OFFICIAL FIFA final draw,
+// held 5 December 2025 at the Kennedy Center, Washington D.C.
+// Teams listed in drawn order (position 1–4). Hosts: Mexico A1, Canada B1, USA D1.
+// Source: en.wikipedia.org/wiki/2026_FIFA_World_Cup_draw
 const GROUPS = {
-  A: ["Mexico", "Croatia", "Ecuador", "Saudi Arabia"],
-  B: ["Canada", "Belgium", "Morocco", "Panama"],
-  C: ["USA", "Netherlands", "Senegal", "Costa Rica"],
-  D: ["Argentina", "Japan", "Poland", "New Zealand"],
-  E: ["France", "Denmark", "Egypt", "Jamaica"],
-  F: ["Brazil", "Switzerland", "Nigeria", "Qatar"],
-  G: ["England", "Uruguay", "Iran", "Wales"],
-  H: ["Spain", "Serbia", "Ghana", "Peru"],
-  I: ["Portugal", "Colombia", "Ivory Coast", "Scotland"],
-  J: ["Germany", "South Korea", "Tunisia", "Chile"],
-  K: ["Netherlands B", "Australia", "Algeria", "Norway"],
-  L: ["Italy", "Ecuador B", "Cameroon", "Austria"],
+  A: ["Mexico", "South Africa", "South Korea", "Czech Republic"],
+  B: ["Canada", "Bosnia and Herzegovina", "Qatar", "Switzerland"],
+  C: ["Brazil", "Morocco", "Haiti", "Scotland"],
+  D: ["USA", "Paraguay", "Australia", "Turkey"],
+  E: ["Germany", "Curacao", "Ivory Coast", "Ecuador"],
+  F: ["Netherlands", "Japan", "Sweden", "Tunisia"],
+  G: ["Belgium", "Egypt", "Iran", "New Zealand"],
+  H: ["Spain", "Cape Verde", "Saudi Arabia", "Uruguay"],
+  I: ["France", "Senegal", "Iraq", "Norway"],
+  J: ["Argentina", "Algeria", "Austria", "Jordan"],
+  K: ["Portugal", "DR Congo", "Uzbekistan", "Colombia"],
+  L: ["England", "Croatia", "Ghana", "Panama"],
 };
 
 // Round-robin pairings for a 4-team group (6 matches)
