@@ -11,6 +11,7 @@ const cfg = require("./data/config");
 const { LANGS, RTL, t } = require("./data/i18n");
 const { build } = require("./data/matches");
 const streams = require("./data/streams");
+const faqData = require("./data/faq");
 
 const ROOT = __dirname;
 const OUT = path.join(ROOT, "public"); // Vercel output directory
@@ -100,6 +101,9 @@ function head(lang, o) {
   <meta property="og:description" content="${esc(o.desc)}" />
   <meta property="og:url" content="${esc(canonical)}" />
   <meta property="og:image" content="${esc(ogImg)}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="${esc(o.title)}" />
   <meta property="og:locale" content="${(LOCALE[lang] || "en_US").replace("-", "_")}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${esc(o.title)}" />
@@ -296,6 +300,9 @@ function matchPage(lang, m) {
   const title = tpl(T.match_title_tpl, vars);
   const desc = tpl(T.match_desc_tpl, vars);
   const h1 = tpl(T.watch_h1_tpl, vars);
+  const faqItems = (faqData[lang] || faqData.en).map((x) => ({
+    q: tpl(x.q, vars), a: tpl(x.a, vars),
+  }));
 
   // JSON-LD: SportsEvent + BroadcastEvent + BreadcrumbList
   const jsonld = {
@@ -327,9 +334,16 @@ function matchPage(lang, m) {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: T.nav_home, item: abs(homePath(lang)) },
-          { "@type": "ListItem", position: 2, name: stage, item: abs(homePath(lang)) + "#schedule" },
+          { "@type": "ListItem", position: 2, name: stage, item: abs(homePath(lang)) + "#matches" },
           { "@type": "ListItem", position: 3, name: `${m.teamA} vs ${m.teamB}`, item: abs(matchPath(lang, m.slug)) },
         ],
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqItems.map((f) => ({
+          "@type": "Question", name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
       },
     ],
   };
@@ -353,6 +367,11 @@ ${topbar(lang, { buildPath })}
 <div class="layout">
   ${sidebar(lang, m)}
   <main class="main">
+    <nav class="crumb" aria-label="breadcrumb">
+      <a href="${homePath(lang)}">${esc(T.nav_home)}</a> ›
+      <a href="${homePath(lang)}#matches">${esc(stage)}</a> ›
+      <span>${esc(matchTitleText(lang, m))}</span>
+    </nav>
     <div class="player-wrap">
       <span class="live-badge">● ${esc(T.nav_live)}</span>
       <span class="viewers-badge">👁 <span id="viewerCount">0</span> ${esc(T.viewers)}</span>
@@ -386,6 +405,12 @@ ${topbar(lang, { buildPath })}
         <p>${esc(tpl(T.match_desc_tpl, vars))}</p>
         <p>${esc(matchTitleText(lang, m))} — ${esc(dateStr)}, ${esc(m.venue)}, ${esc(m.city)}.
         ${esc(T.free_stream)} · ${esc(COMP)}.</p>
+      </div>
+    </section>
+    <section class="section">
+      <h2>FAQ — ${esc(matchTitleText(lang, m))}</h2>
+      <div class="faq">
+        ${faqItems.map((f) => `<details class="faq-item"><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}
       </div>
     </section>
     <section class="section">
@@ -461,10 +486,6 @@ function adminPage() {
     <input id="key" type="password" placeholder="Admin key" autocomplete="current-password"/>
     <button class="btn" id="loginBtn" style="width:100%">Sign in</button>
     <div class="err" id="loginErr"></div>
-    <div class="muted" style="color:var(--muted);font-size:12px;margin-top:12px">
-      Default password: <code>060101</code>. For live stats, connect a free
-      <b>Vercel KV</b> store (no database setup, no SQL).
-    </div>
   </div>
 
   <div id="dash" style="display:none">

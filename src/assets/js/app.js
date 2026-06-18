@@ -2,28 +2,27 @@
 (function () {
   "use strict";
 
-  /* ---------------- Monetization: popunder (effectivecpmnetwork) -------------- */
-  // Opens the smartlink once per session on the first user gesture.
-  var AD_URL = window.SPORTALIVE_AD;
-  function armPopunder() {
+  /* ---------------- Monetization: popunder every 2 minutes -------------- */
+  // Opens the smartlink at most once every 2 minutes, on a user gesture
+  // (browsers block window.open without a click, so we throttle on clicks).
+  (function () {
+    var AD_URL = window.SPORTALIVE_AD;
     if (!AD_URL) return;
-    try { if (sessionStorage.getItem("sl_pop")) return; } catch (e) {}
-    function fire() {
-      try { sessionStorage.setItem("sl_pop", "1"); } catch (e) {}
+    var GAP = 120000; // 2 minutes
+    function last() { try { return +sessionStorage.getItem("sl_adt") || 0; } catch (e) { return 0; } }
+    function setLast(t) { try { sessionStorage.setItem("sl_adt", t); } catch (e) {} }
+    function maybeOpen() {
+      var now = Date.now();
+      if (now - last() < GAP) return;
+      setLast(now);
       try {
         var w = window.open(AD_URL, "_blank");
         if (w) { w.blur(); window.focus(); }
       } catch (e) {}
-      remove();
     }
-    function remove() {
-      document.removeEventListener("click", fire, true);
-      document.removeEventListener("touchstart", fire, true);
-    }
-    document.addEventListener("click", fire, true);
-    document.addEventListener("touchstart", fire, true);
-  }
-  armPopunder();
+    document.addEventListener("click", maybeOpen, true);
+    document.addEventListener("touchstart", maybeOpen, true);
+  })();
 
   /* ---------------- Multi-source live player (DASH + HLS) ---------------- */
   (function () {
@@ -90,8 +89,15 @@
       });
     }
     renderBar();
+    function startClick(e) {
+      if (e) { try { e.stopPropagation(); } catch (x) {} }
+      if (!started) play(current);
+    }
     var startBtn = document.getElementById("startBtn");
-    if (startBtn) startBtn.addEventListener("click", function () { play(current); });
+    if (startBtn) startBtn.addEventListener("click", startClick);
+    if (overlay) { overlay.style.cursor = "pointer"; overlay.addEventListener("click", startClick); }
+    var wrap = document.querySelector(".player-wrap");
+    if (wrap) wrap.addEventListener("click", function () { if (!started) play(current); });
   })();
 
   /* ---------------- Fake live viewers ---------------- */
