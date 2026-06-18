@@ -17,6 +17,7 @@ const BG = require("./data/backgrounds");
 
 const ROOT = __dirname;
 const OUT = path.join(ROOT, "public"); // Vercel output directory
+const VERSION = Date.now().toString(36); // cache-buster for assets (new each build)
 const matches = build();
 const COMP = cfg.tournament.name;
 
@@ -123,7 +124,7 @@ ${hreflangTags(o.buildPath)}  <link rel="icon" href="/assets/img/favicon.svg" ty
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" />
-  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=${VERSION}" />
   <script type="application/ld+json">${JSON.stringify(o.jsonld)}</script>
 </head>
 <body>`;
@@ -222,7 +223,7 @@ function scripts(lang, sources) {
 <script>window.SPORTALIVE_SOURCES=${JSON.stringify(src)};window.SPORTALIVE_AD=${JSON.stringify(cfg.adPopunder)};window.SPORTALIVE_AD_GAP=${JSON.stringify(cfg.adPopunderGapMs || 60000)};</script>
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
-<script src="/assets/js/app.js"></script>
+<script src="/assets/js/app.js?v=${VERSION}"></script>
 </body>
 </html>`;
 }

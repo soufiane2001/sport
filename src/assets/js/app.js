@@ -110,9 +110,11 @@
     }
     renderBar();
     // Live server config from the admin (Vercel KV), overrides baked sources.
-    fetch("/api/servers/").then(function (r) { return r.json(); }).then(function (d) {
-      if (d && d.sources && d.sources.length && !started) { sources = d.sources; renderBar(); }
-    }).catch(function () {});
+    // Cache-buster (?t=) so mobile browsers never serve a stale config.
+    fetch("/api/servers/?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (d && d.sources && d.sources.length && !started) { sources = d.sources; renderBar(); }
+      }).catch(function () {});
 
     function startClick(e) {
       if (e) { try { e.stopPropagation(); } catch (x) {} }
