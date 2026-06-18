@@ -56,6 +56,7 @@ module.exports = async (req, res) => {
   } else {
     cmds.push(["INCR", "hb:total"]);
     cmds.push(["HINCRBY", "page:watch", path, 1]);
+    cmds.push(["HINCRBY", "visitor:hb", vid, 1]); // per-visitor watch time
     if (country) cmds.push(["HINCRBY", "country:watch", country, 1]);
   }
   // presence (active in last 5 min) + per-visitor live metadata

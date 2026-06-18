@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
   const empty = {
     ok: true, storage: false, generatedAt: new Date().toISOString(),
     totals: { views: 0, visitors: 0, views24h: 0, activeNow: 0, watchHours: 0 },
-    timeline: [], countries: [], pages: [], langs: [], referrers: [], live: [],
+    timeline: [], countries: [], pages: [], langs: [], referrers: [], live: [], visitors: [],
   };
   if (!enabled) { res.status(200).json(empty); return; }
 
@@ -38,30 +38,51 @@ module.exports = async (req, res) => {
       ["HGETALL", "ref:views"],          // 8
       ["HGETALL", "traffic:hour"],       // 9
       ["ZRANGEBYSCORE", "active", now - 300000, now, "WITHSCORES"], // 10
+      ["HGETALL", "visitor:hb"],         // 11 (per-visitor watch heartbeats)
     ]);
 
     // active visitors: [vid, score, vid, score, ...]
     const activeArr = Array.isArray(r[10]) ? r[10] : [];
     const activeVids = [];
+    const activeSet = {};
     const seenAt = {};
     for (let i = 0; i < activeArr.length; i += 2) {
       activeVids.push(activeArr[i]);
+      activeSet[activeArr[i]] = true;
       seenAt[activeArr[i]] = Number(activeArr[i + 1]) || 0;
     }
-    // fetch per-visitor metadata
-    let live = [];
-    if (activeVids.length) {
-      const metas = await pipe([["HMGET", "meta"].concat(activeVids)]);
+
+    // per-visitor watch time (heartbeats * 15s). Top watchers + everyone active.
+    const visitorHb = hToObj(r[11]);
+    const topVids = Object.keys(visitorHb).sort((a, b) => visitorHb[b] - visitorHb[a]).slice(0, 100);
+    const metaVids = Array.from(new Set(activeVids.concat(topVids)));
+    const metaMap = {};
+    if (metaVids.length) {
+      const metas = await pipe([["HMGET", "meta"].concat(metaVids)]);
       const arr = (metas && metas[0]) || [];
-      live = activeVids.map((vid, i) => {
-        let m = {};
-        try { m = JSON.parse(arr[i] || "{}"); } catch (e) { m = {}; }
-        return {
-          id: vid, country: m.c || "??", city: m.ci || "",
-          page: m.p || "/", lang: m.l || "", agoSec: Math.round((now - (seenAt[vid] || now)) / 1000),
-        };
-      }).sort((a, b) => a.agoSec - b.agoSec);
+      metaVids.forEach((vid, i) => { try { metaMap[vid] = JSON.parse(arr[i] || "{}"); } catch (e) { metaMap[vid] = {}; } });
     }
+
+    const live = activeVids.map((vid) => {
+      const m = metaMap[vid] || {};
+      return {
+        id: vid, country: m.c || "??", city: m.ci || "", page: m.p || "/", lang: m.l || "",
+        watchMin: Math.round((visitorHb[vid] || 0) * HB_SECONDS / 60),
+        agoSec: Math.round((now - (seenAt[vid] || now)) / 1000),
+      };
+    }).sort((a, b) => a.agoSec - b.agoSec);
+
+    // every visitor with their individual total watch time (top 100)
+    const visitors = topVids.map((vid) => {
+      const m = metaMap[vid] || {};
+      const sec = (visitorHb[vid] || 0) * HB_SECONDS;
+      return {
+        id: vid, country: m.c || "??", city: m.ci || "", page: m.p || "/",
+        watchSec: sec, watchMin: Math.round(sec / 60),
+        lastSec: Math.round((now - (m.t || now)) / 1000),
+        online: !!activeSet[vid],
+      };
+    }).filter((v) => v.watchSec > 0);
 
     const countryViews = hToObj(r[3]), countryWatch = hToObj(r[4]);
     const pageViews = hToObj(r[5]), pageWatch = hToObj(r[6]);
@@ -100,7 +121,7 @@ module.exports = async (req, res) => {
         activeNow: activeVids.length,
         watchHours: +(hb * HB_SECONDS / 3600).toFixed(1),
       },
-      live,
+      live, visitors,
       timeline, countries, pages, langs, referrers,
     });
   } catch (e) {

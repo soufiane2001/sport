@@ -557,7 +557,12 @@ function adminPage() {
 
     <div class="panel">
       <h2>Live now — who is watching <span id="liveCount" style="color:#00d27a"></span></h2>
-      <table id="live"><thead><tr><th>Visitor ID</th><th>Country</th><th>City</th><th>Page</th><th class="num">Seen</th></tr></thead><tbody></tbody></table>
+      <table id="live"><thead><tr><th>Visitor ID</th><th>Country</th><th>City</th><th>Page</th><th class="num">Watch</th><th class="num">Seen</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel">
+      <h2>Visitors — individual watch time <span class="muted" id="visCount" style="font-size:12px;font-weight:400"></span></h2>
+      <table id="visitors"><thead><tr><th>Visitor ID</th><th>Country</th><th class="num">Watch time</th><th>Last page</th><th class="num">Status</th></tr></thead><tbody></tbody></table>
     </div>
 
     <div class="panel">
@@ -646,12 +651,22 @@ function adminPage() {
     // Live now
     var live = d.live || [];
     document.getElementById('liveCount').textContent = '('+live.length+')';
+    function cflag(cc){ return (cc&&cc.length===2)?'<img class="fl" src="https://flagcdn.com/'+cc.toLowerCase()+'.svg" width="22" height="16" alt="" loading="lazy"> ':''; }
+    function dur(sec){ sec=sec||0; var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60; return h?(h+'h '+m+'m'):(m?(m+'m '+s+'s'):(s+'s')); }
     var lb = document.querySelector('#live tbody');
     lb.innerHTML = live.length ? live.map(function(v){
-      var fl = (v.country && v.country.length===2) ? '<img class="fl" src="https://flagcdn.com/'+v.country.toLowerCase()+'.svg" width="22" height="16" alt="" loading="lazy"> ' : '';
       var ago = v.agoSec<60 ? v.agoSec+'s' : Math.round(v.agoSec/60)+'m';
-      return '<tr><td><code>'+esc(v.id).slice(0,12)+'</code></td><td>'+fl+v.country+'</td><td>'+esc(v.city||'-')+'</td><td>'+esc(v.page)+'</td><td class="num">'+ago+' ago</td></tr>';
-    }).join('') : '<tr><td colspan="5" class="muted" style="color:var(--muted)">Nobody online right now.</td></tr>';
+      return '<tr><td><code>'+esc(v.id).slice(0,12)+'</code></td><td>'+cflag(v.country)+v.country+'</td><td>'+esc(v.city||'-')+'</td><td>'+esc(v.page)+'</td><td class="num">'+(v.watchMin||0)+'m</td><td class="num">'+ago+' ago</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="muted" style="color:var(--muted)">Nobody online right now.</td></tr>';
+
+    // Individual visitors watch time
+    var vis = d.visitors || [];
+    document.getElementById('visCount').textContent = '('+vis.length+')';
+    var vb = document.querySelector('#visitors tbody');
+    vb.innerHTML = vis.length ? vis.map(function(v){
+      var status = v.online ? '<span style="color:#00d27a">● online</span>' : (Math.round(v.lastSec/60)+'m ago');
+      return '<tr><td><code>'+esc(v.id).slice(0,12)+'</code></td><td>'+cflag(v.country)+v.country+'</td><td class="num">'+dur(v.watchSec)+'</td><td>'+esc(v.page)+'</td><td class="num">'+status+'</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="muted" style="color:var(--muted)">No watch data yet.</td></tr>';
 
     fill('countries', d.countries, function(r){
       var fl = (r.country && r.country.length===2) ? '<img class="fl" src="https://flagcdn.com/'+r.country.toLowerCase()+'.svg" width="22" height="16" alt="" loading="lazy"> ' : '';
