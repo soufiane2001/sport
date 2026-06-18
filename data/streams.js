@@ -12,12 +12,12 @@
 // Run `node generate.js` after editing.
 
 const DEFAULT_SOURCES = [
-  { name: "Server 1 · HD", url: "https://bpcdnmanprod.nexttv.ht.hr/bpk-tv/HRT2/default/index.mpd", type: "dash" },
+  { name: "Server 1 · HD", url: "https://nl1.nghk.ai/ArenaPremium1HD/index.m3u8", type: "hls" },
 ];
 
 // Optional: reusable channel sources you can point matches to.
 const CHANNELS = {
-  HRT2: { name: "HRT 2 · HD", url: "https://bpcdnmanprod.nexttv.ht.hr/bpk-tv/HRT2/default/index.mpd", type: "dash" },
+  ArenaPremium1: { name: "Arena Premium 1 · HD", url: "https://nl1.nghk.ai/ArenaPremium1HD/index.m3u8", type: "hls" },
   // beinMax1: { name: "beIN MAX 1", url: "https://.../index.m3u8", type: "hls" },
 };
 

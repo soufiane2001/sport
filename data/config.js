@@ -3,8 +3,8 @@ module.exports = {
   domain: "https://www.sportalive.live",
   domainBare: "https://sportalive.live",
   siteName: "SportaLive",
-  // The DASH (MPEG-DASH .mpd) live stream to diffuse
-  streamMpd: "https://bpcdnmanprod.nexttv.ht.hr/bpk-tv/HRT2/default/index.mpd",
+  // The live stream to diffuse (HLS .m3u8). See data/streams.js for per-match sources.
+  streamUrl: "https://nl1.nghk.ai/ArenaPremium1HD/index.m3u8",
   // Monetization popunder smartlink (effectivecpmnetwork)
   adPopunder: "https://www.effectivecpmnetwork.com/jq97y8476?key=5ec0e0d291bbb0478b835617c8b2c877",
   // Default / source language
