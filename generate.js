@@ -196,38 +196,42 @@ function scripts(lang, sources) {
 </html>`;
 }
 
-/* ---------------- full schedule (all 104 matches) ---------------- */
-function scheduleRow(lang, m) {
+/* ---------------- all 104 matches as grouped cards ---------------- */
+function matchCard(lang, m, live) {
   const T = t[lang];
+  const liveTag = live ? `<span class="livep">● ${esc(T.nav_live)}</span>` : "";
   return `
-      <a class="srow" href="${matchPath(lang, m.slug)}">
-        <span class="srow-num">#${m.num}</span>
-        <span class="srow-teams">${esc(m.teamA)} <i>${esc(T.vs)}</i> ${esc(m.teamB)}</span>
-        <span class="srow-meta">${esc(fmtDate(m.dateISO, lang))} · ${esc(m.city)}</span>
-      </a>`;
+    <a class="card" href="${matchPath(lang, m.slug)}">
+      <div class="thumb">${liveTag}
+        <span class="stagep">#${m.num}</span>
+        <span class="match">${esc(m.teamA)}<br>${esc(T.vs)}<br>${esc(m.teamB)}</span>
+      </div>
+      <div class="body">
+        <div class="t">${esc(matchTitleText(lang, m))}</div>
+        <div class="d">${esc(fmtDate(m.dateISO, lang))} · ${esc(m.city)}</div>
+      </div>
+    </a>`;
 }
-function fullSchedule(lang) {
+function groupedCards(lang) {
   const T = t[lang];
   let out = "";
-  // group stage by group letter
   const groups = {};
   matches.filter((m) => m.stage === "group").forEach((m) => {
     (groups[m.group] = groups[m.group] || []).push(m);
   });
   Object.keys(groups).sort().forEach((g) => {
-    out += `<div class="sched-block"><h3>${esc(T.group)} ${g}</h3><div class="sched-list">` +
-      groups[g].map((m) => scheduleRow(lang, m)).join("") + `</div></div>`;
+    out += `<h3 class="grp-h">${esc(T.group)} ${g}</h3><div class="grid">` +
+      groups[g].map((m) => matchCard(lang, m, false)).join("") + `</div>`;
   });
-  // knockout stages
   const ko = [["r32", T.stage.r32], ["r16", T.stage.r16], ["qf", T.stage.qf],
     ["sf", T.stage.sf], ["third", T.stage.third], ["final", T.stage.final]];
   ko.forEach(([key, label]) => {
     const ms = matches.filter((m) => m.stage === key);
     if (!ms.length) return;
-    out += `<div class="sched-block"><h3>${esc(label)}</h3><div class="sched-list">` +
-      ms.map((m) => scheduleRow(lang, m)).join("") + `</div></div>`;
+    out += `<h3 class="grp-h">${esc(label)}</h3><div class="grid">` +
+      ms.map((m) => matchCard(lang, m, false)).join("") + `</div>`;
   });
-  return `<div class="sched">${out}</div>`;
+  return out;
 }
 
 /* ---------------- pages ---------------- */
@@ -252,23 +256,6 @@ function homePage(lang) {
     ],
   };
 
-  let cards = "";
-  upcoming.forEach((m, i) => {
-    const liveTag = i < 3 ? `<span class="livep">● ${esc(T.nav_live)}</span>` : "";
-    cards += `
-    <a class="card" href="${matchPath(lang, m.slug)}">
-      <div class="thumb">
-        ${liveTag}
-        <span class="stagep">${esc(stageLabel(lang, m))}</span>
-        <span class="match">${esc(m.teamA)}<br>${esc(T.vs)}<br>${esc(m.teamB)}</span>
-      </div>
-      <div class="body">
-        <div class="t">${esc(matchTitleText(lang, m))}</div>
-        <div class="d">${esc(fmtDate(m.dateISO, lang))} · ${esc(m.city)}</div>
-      </div>
-    </a>`;
-  });
-
   const body = `
 ${topbar(lang, { buildPath })}
 <div class="layout">
@@ -280,13 +267,9 @@ ${topbar(lang, { buildPath })}
       <a class="btn" href="${matchPath(lang, matches[0].slug)}">▶ ${esc(T.watch_live)}</a>
     </section>
     <section class="section" id="matches">
-      <h2>${esc(T.upcoming)} — ${esc(COMP)}</h2>
-      <div class="grid">${cards}</div>
-    </section>
-    <section class="section" id="schedule">
-      <h2>${esc(T.full_schedule)} — ${matches.length} ${esc(T.nav_matches)}</h2>
-      <p style="color:var(--muted)">${esc(T.seo_home_desc)}</p>
-      ${fullSchedule(lang)}
+      <h2>${esc(T.full_schedule)} — ${matches.length} ${esc(T.nav_matches)} · ${esc(COMP)}</h2>
+      <p style="color:var(--muted);margin:-6px 0 4px">${esc(T.seo_home_desc)}</p>
+      ${groupedCards(lang)}
     </section>
     ${footer(lang, { buildPath })}
   </main>

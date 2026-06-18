@@ -98,6 +98,8 @@ img{max-width:100%}
 .section{padding:18px}
 .section h2{font-size:17px;margin:0 0 14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.grp-h{font-size:15px;margin:22px 0 12px;padding-bottom:7px;border-bottom:2px solid var(--purple);
+  color:#fff;display:inline-block}
 .card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
   transition:transform .12s,border-color .12s}
 .card:hover{transform:translateY(-3px);border-color:var(--purple)}
