@@ -28,6 +28,8 @@ module.exports = async (req, res) => {
 
   const h = req.headers;
   const country = h["x-vercel-ip-country"] || null;
+  let city = h["x-vercel-ip-city"] || "";
+  try { city = decodeURIComponent(city); } catch (e) {}
   const ua = h["user-agent"] || "";
   const isBot = /bot|crawl|spider|preview|monitor|lighthouse/i.test(ua);
   if (isBot) { res.status(200).end(); return; }
@@ -54,9 +56,12 @@ module.exports = async (req, res) => {
     cmds.push(["HINCRBY", "page:watch", path, 1]);
     if (country) cmds.push(["HINCRBY", "country:watch", country, 1]);
   }
-  // presence (active in last 5 min)
+  // presence (active in last 5 min) + per-visitor live metadata
   cmds.push(["ZADD", "active", now, vid]);
   cmds.push(["ZREMRANGEBYSCORE", "active", 0, now - 300000]);
+  cmds.push(["HSET", "meta", vid, JSON.stringify({
+    c: country || "", ci: city || "", p: path, l: lang, t: now,
+  })]);
 
   try { await pipe(cmds); } catch (e) {}
   res.status(204).end();

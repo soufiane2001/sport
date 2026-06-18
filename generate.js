@@ -536,6 +536,11 @@ function adminPage() {
     <div class="cards" id="cards"></div>
 
     <div class="panel">
+      <h2>Live now — who is watching <span id="liveCount" style="color:#00d27a"></span></h2>
+      <table id="live"><thead><tr><th>Visitor ID</th><th>Country</th><th>City</th><th>Page</th><th class="num">Seen</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel">
       <h2>Traffic — last 24 hours (page views per hour)</h2>
       <div class="bars" id="bars"></div>
     </div>
@@ -576,7 +581,7 @@ function adminPage() {
   async function load(){
     var k=getKey(); if(!k) return show(false);
     try{
-      var r=await fetch('/api/stats?key='+encodeURIComponent(k));
+      var r=await fetch('/api/stats/?key='+encodeURIComponent(k));
       if(r.status===401){ document.getElementById('loginErr').textContent='Wrong key.'; return show(false); }
       var d=await r.json();
       if(d.error){ document.getElementById('dashErr').textContent=d.error; }
@@ -603,6 +608,16 @@ function adminPage() {
       return '<div class="bar" style="height:'+h+'%" data-t="'+hr+': '+x.views+' views"></div>';
     }).join('') : '<span class="muted" style="color:var(--muted)">No data yet.</span>';
 
+    // Live now
+    var live = d.live || [];
+    document.getElementById('liveCount').textContent = '('+live.length+')';
+    var lb = document.querySelector('#live tbody');
+    lb.innerHTML = live.length ? live.map(function(v){
+      var fl = (v.country && v.country.length===2) ? '<img class="fl" src="https://flagcdn.com/'+v.country.toLowerCase()+'.svg" width="22" height="16" alt="" loading="lazy"> ' : '';
+      var ago = v.agoSec<60 ? v.agoSec+'s' : Math.round(v.agoSec/60)+'m';
+      return '<tr><td><code>'+esc(v.id).slice(0,12)+'</code></td><td>'+fl+v.country+'</td><td>'+esc(v.city||'-')+'</td><td>'+esc(v.page)+'</td><td class="num">'+ago+' ago</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="muted" style="color:var(--muted)">Nobody online right now.</td></tr>';
+
     fill('countries', d.countries, function(r){
       var fl = (r.country && r.country.length===2) ? '<img class="fl" src="https://flagcdn.com/'+r.country.toLowerCase()+'.svg" width="22" height="16" alt="" loading="lazy"> ' : '';
       return '<td>'+fl+r.country+'</td><td class="num">'+r.views+'</td><td class="num">'+r.watch_min+'</td>'; });
@@ -623,7 +638,7 @@ function adminPage() {
   document.getElementById('refreshBtn').onclick=load;
   document.getElementById('logout').onclick=function(e){ e.preventDefault(); try{sessionStorage.removeItem('sl_admin');}catch(x){} show(false); };
   load();
-  setInterval(function(){ if(getKey()&&dash.style.display!=='none') load(); }, 30000);
+  setInterval(function(){ if(getKey()&&dash.style.display!=='none') load(); }, 12000);
 })();
 </script>
 </body>

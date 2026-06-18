@@ -172,9 +172,9 @@
         lang: document.documentElement.lang || "", vid: vid(),
       });
       try {
-        if (navigator.sendBeacon) { navigator.sendBeacon("/api/track", payload); return; }
+        if (navigator.sendBeacon) { navigator.sendBeacon("/api/track/", payload); return; }
       } catch (e) {}
-      try { fetch("/api/track", { method: "POST", body: payload, keepalive: true }); } catch (e) {}
+      try { fetch("/api/track/", { method: "POST", body: payload, keepalive: true }); } catch (e) {}
     }
     send("view");
     // Heartbeat = watch time. Only while tab is visible.

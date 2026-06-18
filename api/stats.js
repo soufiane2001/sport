@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
   const empty = {
     ok: true, storage: false, generatedAt: new Date().toISOString(),
     totals: { views: 0, visitors: 0, views24h: 0, activeNow: 0, watchHours: 0 },
-    timeline: [], countries: [], pages: [], langs: [], referrers: [],
+    timeline: [], countries: [], pages: [], langs: [], referrers: [], live: [],
   };
   if (!enabled) { res.status(200).json(empty); return; }
 
@@ -37,8 +37,31 @@ module.exports = async (req, res) => {
       ["HGETALL", "lang:views"],         // 7
       ["HGETALL", "ref:views"],          // 8
       ["HGETALL", "traffic:hour"],       // 9
-      ["ZCOUNT", "active", now - 300000, now], // 10
+      ["ZRANGEBYSCORE", "active", now - 300000, now, "WITHSCORES"], // 10
     ]);
+
+    // active visitors: [vid, score, vid, score, ...]
+    const activeArr = Array.isArray(r[10]) ? r[10] : [];
+    const activeVids = [];
+    const seenAt = {};
+    for (let i = 0; i < activeArr.length; i += 2) {
+      activeVids.push(activeArr[i]);
+      seenAt[activeArr[i]] = Number(activeArr[i + 1]) || 0;
+    }
+    // fetch per-visitor metadata
+    let live = [];
+    if (activeVids.length) {
+      const metas = await pipe([["HMGET", "meta"].concat(activeVids)]);
+      const arr = (metas && metas[0]) || [];
+      live = activeVids.map((vid, i) => {
+        let m = {};
+        try { m = JSON.parse(arr[i] || "{}"); } catch (e) { m = {}; }
+        return {
+          id: vid, country: m.c || "??", city: m.ci || "",
+          page: m.p || "/", lang: m.l || "", agoSec: Math.round((now - (seenAt[vid] || now)) / 1000),
+        };
+      }).sort((a, b) => a.agoSec - b.agoSec);
+    }
 
     const countryViews = hToObj(r[3]), countryWatch = hToObj(r[4]);
     const pageViews = hToObj(r[5]), pageWatch = hToObj(r[6]);
@@ -74,9 +97,10 @@ module.exports = async (req, res) => {
         views: Number(r[0] || 0),
         visitors: Number(r[2] || 0),
         views24h,
-        activeNow: Number(r[10] || 0),
+        activeNow: activeVids.length,
         watchHours: +(hb * HB_SECONDS / 3600).toFixed(1),
       },
+      live,
       timeline, countries, pages, langs, referrers,
     });
   } catch (e) {
