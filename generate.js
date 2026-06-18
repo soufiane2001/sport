@@ -13,6 +13,7 @@ const { build } = require("./data/matches");
 const streams = require("./data/streams");
 const faqData = require("./data/faq");
 const FLAGS = require("./data/flags");
+const BG = require("./data/backgrounds");
 
 const ROOT = __dirname;
 const OUT = path.join(ROOT, "public"); // Vercel output directory
@@ -401,7 +402,7 @@ ${topbar(lang, { buildPath })}
       <span class="live-badge">${esc(T.nav_live)}</span>
       <span class="viewers-badge"><span id="viewerCount">0</span> ${esc(T.viewers)}</span>
       <video id="player" playsinline controls preload="none"></video>
-      <div class="player-overlay" id="playerOverlay">
+      <div class="player-overlay" id="playerOverlay"${BG[m.slug] ? ` style="background:linear-gradient(rgba(10,5,20,.55),rgba(10,5,20,.8)),url('${esc(BG[m.slug])}') center/cover no-repeat"` : ""}>
         <div class="big">
           <span class="tm">${flag(m.teamA, "big-fl")}<span>${esc(m.teamA)}</span></span>
           <span class="vsx">${esc(T.vs)}</span>
