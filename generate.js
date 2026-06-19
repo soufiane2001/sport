@@ -276,6 +276,23 @@ function homePage(lang) {
   const buildPath = (l) => homePath(l);
   const upcoming = matches.slice(0, 18);
 
+  // Featured match overrides homepage SEO + hero
+  const featured = cfg.featuredMatchSlug ? matches.find((m) => m.slug === cfg.featuredMatchSlug) : null;
+  let homeTitle = T.seo_home_title, homeDesc = T.seo_home_desc;
+  let heroTitle = T.hero_title, heroSub = T.hero_sub, heroCta = matchPath(lang, matches[0].slug);
+  if (featured) {
+    const fv = {
+      A: featured.teamA, B: featured.teamB, date: fmtDate(featured.dateISO, lang),
+      time: fmtTime(featured.dateISO, lang), venue: featured.venue, city: featured.city,
+      stage: stageLabel(lang, featured), comp: COMP,
+    };
+    homeTitle = tpl(T.match_title_tpl, fv);
+    homeDesc = tpl(T.match_desc_tpl, fv);
+    heroTitle = tpl(T.watch_h1_tpl, fv);
+    heroSub = homeDesc;
+    heroCta = matchPath(lang, featured.slug);
+  }
+
   // JSON-LD: WebSite + ItemList of events
   const jsonld = {
     "@context": "https://schema.org",
@@ -298,9 +315,9 @@ ${topbar(lang, { buildPath })}
   ${sidebar(lang, null)}
   <main class="main">
     <section class="hero" id="live">
-      <h1>${esc(T.hero_title)}</h1>
-      <p>${esc(T.hero_sub)}</p>
-      <a class="btn" href="${matchPath(lang, matches[0].slug)}">${esc(T.watch_live)}</a>
+      <h1>${esc(heroTitle)}</h1>
+      <p>${esc(heroSub)}</p>
+      <a class="btn" href="${esc(heroCta)}">${esc(T.watch_live)}</a>
     </section>
     ${adNative()}
     <section class="section" id="matches">
@@ -314,7 +331,7 @@ ${topbar(lang, { buildPath })}
 </div>`;
 
   const html = head(lang, {
-    title: T.seo_home_title, desc: T.seo_home_desc,
+    title: homeTitle, desc: homeDesc,
     canonicalPath: homePath(lang), buildPath, jsonld,
   }) + body + scripts(lang, streams.DEFAULT_SOURCES);
 

@@ -16,6 +16,9 @@ module.exports = {
   // Native/banner ad (effectivecpmnetwork invoke.js)
   adNativeSrc: "https://pl29569991.effectivecpmnetwork.com/8c2948cd379e7f712c043acbbd7ad4dd/invoke.js",
   adNativeId: "container-8c2948cd379e7f712c043acbbd7ad4dd",
+  // Featured match: overrides the homepage SEO title/description + hero.
+  // Set to "" to use the generic World Cup homepage SEO.
+  featuredMatchSlug: "morocco-vs-scotland-world-cup-2026",
   // Default / source language
   defaultLang: "en",
   // World Cup 2026 window
